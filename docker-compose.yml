@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: voice-analyzer-backend
+    environment:
+      - SECRET_KEY=change-this-to-a-secure-random-string
+      - ADMIN_USERNAME=autoace
+      - ADMIN_PASSWORD=autoace2024
+      - WHISPER_MODEL_SIZE=base
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-db:/app
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: voice-analyzer-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-uploads:
+  backend-db:

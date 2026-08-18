@@ -1,0 +1,59 @@
+# Evaluation/training data (large audio files)
+real_speech_eval/
+evaluation_data/
+sample_data/
+test_batch/
+pretrained_models/
+
+# Training & diagnostic scripts (not needed in production)
+finetune_*.py
+diagnose_*.py
+train_*.py
+eval_esd.py
+download_real_audio.py
+run_evaluation.py
+run_real_eval.py
+diagnose_calls.py
+test_e2e.py
+
+# Cached embeddings & results
+*.npz
+ravdess_results.txt
+results_final.txt
+calls.zip
+
+# Model caches (downloaded at runtime)
+*.pkl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# Database
+*.db
+
+# Frontend
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (user data)
+backend/uploads/
+
+# Test/eval artifacts
+evaluation_batch.zip
+test_batch.zip
+test_audio.wav
+labels.csv
+.specstory/
