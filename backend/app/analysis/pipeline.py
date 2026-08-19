@@ -39,7 +39,7 @@ from app.analysis.diarization import diarize_call
 logger = logging.getLogger(__name__)
 
 # Supported audio extensions
-SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".wma", ".aac", ".webm", ".mp4"}
+SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".wma", ".aac", ".webm", ".mp4", ".mpeg"}
 
 
 def analyze_audio_file(file_path: str | Path) -> AnalysisResult:
