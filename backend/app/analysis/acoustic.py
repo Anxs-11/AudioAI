@@ -78,9 +78,16 @@ def extract_features(audio: np.ndarray, sr: int = SAMPLE_RATE) -> AcousticFeatur
     if len(audio) < sr * 0.1:  # less than 100 ms → not enough data
         return feat
 
+    # For long audio, subsample for expensive features (pitch, MFCCs)
+    max_analysis_sec = 60
+    if len(audio) > sr * max_analysis_sec:
+        analysis_audio = audio[:sr * max_analysis_sec]
+    else:
+        analysis_audio = audio
+
     # ── Pitch (F0) via pyin ────────────────────────────────────────────────
     f0, voiced_flag, _ = librosa.pyin(
-        audio, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C7"), sr=sr,
+        analysis_audio, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C7"), sr=sr,
     )
     voiced_f0 = f0[voiced_flag] if voiced_flag is not None else np.array([])
     if len(voiced_f0) > 0:
@@ -96,13 +103,13 @@ def extract_features(audio: np.ndarray, sr: int = SAMPLE_RATE) -> AcousticFeatur
     feat.rms_max = float(np.max(rms))
 
     # ── Spectral features ──────────────────────────────────────────────────
-    feat.spectral_centroid_mean = float(np.mean(librosa.feature.spectral_centroid(y=audio, sr=sr)))
-    feat.spectral_bandwidth_mean = float(np.mean(librosa.feature.spectral_bandwidth(y=audio, sr=sr)))
-    feat.spectral_flatness_mean = float(np.mean(librosa.feature.spectral_flatness(y=audio)))
-    feat.zcr_mean = float(np.mean(librosa.feature.zero_crossing_rate(audio)))
+    feat.spectral_centroid_mean = float(np.mean(librosa.feature.spectral_centroid(y=analysis_audio, sr=sr)))
+    feat.spectral_bandwidth_mean = float(np.mean(librosa.feature.spectral_bandwidth(y=analysis_audio, sr=sr)))
+    feat.spectral_flatness_mean = float(np.mean(librosa.feature.spectral_flatness(y=analysis_audio)))
+    feat.zcr_mean = float(np.mean(librosa.feature.zero_crossing_rate(analysis_audio)))
 
     # ── MFCCs ──────────────────────────────────────────────────────────────
-    mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13)
+    mfccs = librosa.feature.mfcc(y=analysis_audio, sr=sr, n_mfcc=13)
     feat.mfcc_means = [float(np.mean(mfccs[i])) for i in range(13)]
 
     # ── Silence detection ──────────────────────────────────────────────────

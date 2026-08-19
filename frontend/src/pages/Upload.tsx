@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { logout, uploadBatch, runBatch, UploadResponse } from "../api";
+import { logout, uploadBatch, uploadFiles, runBatch, UploadResponse } from "../api";
 import ProgressBar from "../components/ProgressBar";
 
 export default function Upload() {
   const [file, setFile] = useState<File | null>(null);
+  const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
@@ -12,24 +13,34 @@ export default function Upload() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const AUDIO_EXTS = [".wav", ".mp3", ".flac", ".ogg", ".m4a", ".wma", ".aac", ".webm", ".mp4", ".mpeg"];
+
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.name.endsWith(".zip")) {
-      setFile(droppedFile);
+    const dropped = Array.from(e.dataTransfer.files);
+    if (dropped.length === 1 && dropped[0].name.endsWith(".zip")) {
+      setFile(dropped[0]);
+      setAudioFiles([]);
       setError("");
     } else {
-      setError("Please upload a .zip file");
+      const audio = dropped.filter(f => AUDIO_EXTS.some(ext => f.name.toLowerCase().endsWith(ext)));
+      if (audio.length > 0) {
+        setAudioFiles(prev => [...prev, ...audio]);
+        setFile(null);
+        setError("");
+      } else {
+        setError("No supported audio files found. Supported: WAV, MP3, OGG, FLAC, M4A, MPEG");
+      }
     }
   }, []);
 
   async function handleUpload() {
-    if (!file) return;
+    if (!file && audioFiles.length === 0) return;
     setUploading(true);
     setError("");
     try {
-      const res = await uploadBatch(file);
+      const res = file ? await uploadBatch(file) : await uploadFiles(audioFiles);
       setUploadResult(res);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Upload failed");
@@ -70,9 +81,9 @@ export default function Upload() {
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-semibold text-slate-800 mb-2">Upload Evaluation Batch</h2>
+        <h2 className="text-2xl font-semibold text-slate-800 mb-2">Upload Audio for Analysis</h2>
         <p className="text-slate-500 mb-8">
-          Upload a ZIP archive containing audio files (WAV, MP3, etc.) and an optional <code className="bg-gray-200 px-1 rounded">labels.csv</code> manifest.
+          Drop audio files directly (WAV, MP3, OGG, FLAC, etc.) or a ZIP archive. Optionally include a <code className="bg-gray-200 px-1 rounded">labels.csv</code> manifest in the ZIP.
         </p>
 
         {/* Drop zone */}
@@ -90,11 +101,19 @@ export default function Upload() {
               <input
                 id="file-input"
                 type="file"
-                accept=".zip"
+                accept=".zip,.wav,.mp3,.flac,.ogg,.m4a,.wma,.aac,.webm,.mp4,.mpeg"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { setFile(f); setError(""); }
+                  const selected = Array.from(e.target.files || []);
+                  if (selected.length === 1 && selected[0].name.endsWith(".zip")) {
+                    setFile(selected[0]);
+                    setAudioFiles([]);
+                  } else {
+                    const audio = selected.filter(f => AUDIO_EXTS.some(ext => f.name.toLowerCase().endsWith(ext)));
+                    if (audio.length > 0) { setAudioFiles(prev => [...prev, ...audio]); setFile(null); }
+                  }
+                  setError("");
                 }}
               />
               {file ? (
@@ -102,20 +121,27 @@ export default function Upload() {
                   <p className="text-lg font-medium text-slate-700">{file.name}</p>
                   <p className="text-sm text-slate-400 mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
                 </div>
+              ) : audioFiles.length > 0 ? (
+                <div>
+                  <p className="text-lg font-medium text-slate-700">{audioFiles.length} audio file{audioFiles.length > 1 ? "s" : ""} selected</p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    {audioFiles.slice(0, 3).map(f => f.name).join(", ")}{audioFiles.length > 3 ? ` +${audioFiles.length - 3} more` : ""}
+                  </p>
+                </div>
               ) : (
                 <div>
-                  <p className="text-lg text-slate-500">Drag &amp; drop a ZIP file here</p>
-                  <p className="text-sm text-slate-400 mt-1">or click to browse</p>
+                  <p className="text-lg text-slate-500">Drag &amp; drop audio files or a ZIP here</p>
+                  <p className="text-sm text-slate-400 mt-1">or click to browse — supports WAV, MP3, OGG, FLAC, M4A, MPEG</p>
                 </div>
               )}
             </div>
 
             <button
               onClick={handleUpload}
-              disabled={!file || uploading}
+              disabled={(!file && audioFiles.length === 0) || uploading}
               className="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
             >
-              {uploading ? "Uploading…" : "Upload & Validate"}
+              {uploading ? "Uploading…" : "Upload & Analyze"}
             </button>
           </>
         )}

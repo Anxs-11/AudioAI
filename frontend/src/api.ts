@@ -64,6 +64,13 @@ export async function uploadBatch(file: File): Promise<UploadResponse> {
   return res.data;
 }
 
+export async function uploadFiles(files: File[]): Promise<UploadResponse> {
+  const form = new FormData();
+  files.forEach((f) => form.append("files", f));
+  const res = await api.post("/batch/upload-files", form);
+  return res.data;
+}
+
 export async function runBatch(batchId: number) {
   return api.post(`/batch/${batchId}/run`);
 }

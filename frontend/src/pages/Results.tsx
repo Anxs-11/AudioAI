@@ -94,24 +94,15 @@ export default function Results() {
           <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mt-4">{error}</div>
         )}
 
-        {/* Loading state before first poll */}
-        {!status && !error && (
+        {/* Loading / Processing state */}
+        {(!status || (status.status !== "completed" && status.status !== "failed")) && !error && (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-16 h-16 rounded-full border-4 border-slate-200 border-t-slate-900 animate-spin mb-4" />
-            <p className="text-sm text-slate-500">Loading batch status...</p>
-          </div>
-        )}
-
-        {/* Progress section */}
-        {status && status.status !== "completed" && status.status !== "failed" && (
-          <div className="flex flex-col items-center justify-center py-20">
-            {/* Spinning wheel */}
             <div className="relative w-24 h-24 mb-6">
               <div className="absolute inset-0 rounded-full border-4 border-slate-200" />
               <div className="absolute inset-0 rounded-full border-4 border-slate-900 border-t-transparent animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-lg font-bold text-slate-900">
-                  {status.total_files > 0
+                  {status && status.total_files > 0
                     ? Math.round(((status.processed_files + status.failed_files) / status.total_files) * 100)
                     : 0}%
                 </span>
@@ -120,12 +111,13 @@ export default function Results() {
 
             <h3 className="text-lg font-semibold text-slate-800 mb-1">Analyzing Audio Files</h3>
             <p className="text-sm text-slate-500 mb-6">
-              Processing {status.processed_files + status.failed_files} of {status.total_files} files...
+              {status
+                ? `Processing ${status.processed_files + status.failed_files} of ${status.total_files} files...`
+                : "Starting analysis..."}
             </p>
 
-            {/* Progress bar */}
             <div className="w-full max-w-md">
-              <ProgressBar percent={progress} />
+              <ProgressBar percent={status ? progress : 0} />
             </div>
 
             <p className="text-xs text-slate-400 mt-4">

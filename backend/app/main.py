@@ -47,6 +47,17 @@ async def lifespan(app: FastAPI):
             logger.info("Created default admin user: %s", DEFAULT_USERNAME)
 
     logger.info("Voice Analyzer API ready.")
+    # Pre-load ML models in background to avoid cold-start on first request
+    import threading
+    def _warmup():
+        from app.analysis.emotion_model import _get_original_pipe, _get_finetuned_model
+        from app.analysis.transcription import _get_model
+        logger.info("Pre-loading ML models...")
+        _get_model()
+        _get_original_pipe()
+        _get_finetuned_model()
+        logger.info("ML models loaded and ready.")
+    threading.Thread(target=_warmup, daemon=True).start()
     yield
     logger.info("Shutting down.")
 

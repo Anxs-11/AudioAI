@@ -20,7 +20,7 @@ import traceback
 import zipfile
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -106,6 +106,49 @@ async def upload_batch(
         "total_files": len(audio_files),
         "files": [af.name for af in audio_files],
         "validation_errors": validation_errors,
+    }
+
+
+@router.post("/upload-files", status_code=status.HTTP_201_CREATED)
+async def upload_files(
+    files: list[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Upload individual audio files directly (no ZIP required)."""
+    batch = Batch(user_id=user.id, status="pending")
+    db.add(batch)
+    await db.commit()
+    await db.refresh(batch)
+
+    batch_dir = UPLOAD_DIR / str(batch.id) / "files"
+    batch_dir.mkdir(parents=True, exist_ok=True)
+
+    saved = []
+    for f in files:
+        if not f.filename:
+            continue
+        ext = Path(f.filename).suffix.lower()
+        if ext not in SUPPORTED_EXTENSIONS:
+            continue
+        dest = batch_dir / f.filename
+        dest.write_bytes(await f.read())
+        saved.append(f.filename)
+        fr = FileResult(batch_id=batch.id, filename=f.filename, status="pending")
+        db.add(fr)
+
+    if not saved:
+        raise HTTPException(status_code=400, detail="No supported audio files found")
+
+    batch.total_files = len(saved)
+    await db.commit()
+    await db.refresh(batch)
+
+    return {
+        "batch_id": batch.id,
+        "total_files": len(saved),
+        "files": saved,
+        "validation_errors": [],
     }
 
 
