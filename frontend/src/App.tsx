@@ -3,6 +3,7 @@ import { isLoggedIn } from "./api";
 import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Results from "./pages/Results";
+import History from "./pages/History";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   return isLoggedIn() ? children : <Navigate to="/login" replace />;
@@ -25,6 +26,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Results />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <ProtectedRoute>
+            <History />
           </ProtectedRoute>
         }
       />

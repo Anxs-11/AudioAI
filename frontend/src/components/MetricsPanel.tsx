@@ -9,6 +9,11 @@ import {
   Pie,
   Cell,
   Legend,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
 } from "recharts";
 import { BatchMetrics } from "../api";
 
@@ -37,6 +42,12 @@ const QUALITY_COLORS: Record<string, string> = {
   severely_impaired: "#ef4444",
 };
 
+const INTENSITY_COLORS: Record<string, string> = {
+  low: "#93c5fd",
+  medium: "#3b82f6",
+  high: "#1d4ed8",
+};
+
 function toChartData(dist: Record<string, number>) {
   return Object.entries(dist).map(([name, value]) => ({ name, value }));
 }
@@ -46,15 +57,60 @@ export default function MetricsPanel({ metrics }: Props) {
   const severityData = toChartData(metrics.noise_severity_distribution);
   const qualityData = toChartData(metrics.quality_distribution);
   const noiseTypeData = toChartData(metrics.noise_type_distribution);
+  const intensityData = toChartData(metrics.intensity_distribution);
+
+  // Confidence histogram buckets
+  const confBuckets = [0, 0, 0, 0, 0];
+  (metrics.confidence_values || []).forEach((v) => {
+    const idx = Math.min(Math.floor(v * 5), 4);
+    confBuckets[idx]++;
+  });
+  const confData = ["0-20%", "20-40%", "40-60%", "60-80%", "80-100%"].map((name, i) => ({
+    name,
+    count: confBuckets[i],
+  }));
+
+  // Summary insights
+  const total = metrics.total_completed;
+  const negativeCount =
+    (metrics.tone_distribution.upset || 0) +
+    (metrics.tone_distribution.frustrated || 0) +
+    (metrics.tone_distribution.distressed || 0);
+  const noiseCount = total - (metrics.noise_severity_distribution.none || 0);
 
   return (
     <div className="space-y-8 mt-8">
+      {/* Insights banner */}
+      {total > 0 && (
+        <div className="bg-gradient-to-r from-slate-900 to-slate-700 rounded-xl p-5 text-white">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-3">Batch Insights</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-3xl font-bold">{total}</p>
+              <p className="text-xs text-slate-300 mt-1">Files Analyzed</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-amber-400">{negativeCount}</p>
+              <p className="text-xs text-slate-300 mt-1">Negative Emotions</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-blue-400">{noiseCount}</p>
+              <p className="text-xs text-slate-300 mt-1">With Background Noise</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-emerald-400">{(metrics.average_confidence * 100).toFixed(0)}%</p>
+              <p className="text-xs text-slate-300 mt-1">Avg Confidence</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Avg Confidence" value={`${(metrics.average_confidence * 100).toFixed(0)}%`} />
-        <StatCard label="Files Analyzed" value={metrics.total_completed.toString()} />
-        <StatCard label="Speaker Overlap" value={metrics.overlap_count.toString()} />
-        <StatCard label="Long Silence" value={metrics.silence_count.toString()} />
+        <StatCard label="Speaker Overlap" value={metrics.overlap_count.toString()} subtitle={`of ${total} files`} />
+        <StatCard label="Long Silence" value={metrics.silence_count.toString()} subtitle={`of ${total} files`} />
+        <StatCard label="Clear Audio" value={(metrics.quality_distribution.clear || 0).toString()} subtitle={`of ${total} files`} />
       </div>
 
       {/* Charts row */}
@@ -119,6 +175,34 @@ export default function MetricsPanel({ metrics }: Props) {
             </ResponsiveContainer>
           </ChartCard>
         )}
+
+        {/* Emotional Intensity */}
+        <ChartCard title="Emotional Intensity">
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={intensityData}>
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="value">
+                {intensityData.map((entry) => (
+                  <Cell key={entry.name} fill={INTENSITY_COLORS[entry.name] || "#94a3b8"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Confidence Distribution */}
+        <ChartCard title="Confidence Score Distribution">
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={confData}>
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#0f172a" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       {/* Confusion Matrix */}
@@ -134,11 +218,12 @@ export default function MetricsPanel({ metrics }: Props) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, subtitle }: { label: string; value: string; subtitle?: string }) {
   return (
     <div className="bg-white rounded-xl shadow px-5 py-4 text-center">
       <p className="text-xs text-slate-500 uppercase tracking-wide">{label}</p>
       <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
+      {subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
   );
 }

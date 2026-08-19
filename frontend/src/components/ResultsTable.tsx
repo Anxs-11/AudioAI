@@ -46,8 +46,16 @@ export default function ResultsTable({ results, batchId }: Props) {
   const [detailFile, setDetailFile] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingFile, setPlayingFile] = useState<string | null>(null);
+  const [filterTone, setFilterTone] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const detailResult = results.find((r) => r.filename === detailFile);
+  const filteredResults = results.filter((r) => {
+    if (searchTerm && !r.filename.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterTone && r.result?.emotional_tone !== filterTone) return false;
+    return true;
+  });
+
+  const detailResult = filteredResults.find((r) => r.filename === detailFile);
 
   function togglePlay(filename: string) {
     if (playingFile === filename) {
@@ -60,6 +68,31 @@ export default function ResultsTable({ results, batchId }: Props) {
 
   return (
     <div className="mt-8 space-y-4">
+      {/* Filter bar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-48"
+        />
+        <select
+          value={filterTone}
+          onChange={(e) => setFilterTone(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+        >
+          <option value="">All Tones</option>
+          <option value="neutral">Neutral</option>
+          <option value="satisfied">Satisfied</option>
+          <option value="frustrated">Frustrated</option>
+          <option value="upset">Upset</option>
+          <option value="distressed">Distressed</option>
+        </select>
+        <span className="text-xs text-slate-400">
+          {filteredResults.length} of {results.length} files
+        </span>
+      </div>
       {/* Hidden audio element */}
       {playingFile && (
         <audio
@@ -73,7 +106,7 @@ export default function ResultsTable({ results, batchId }: Props) {
 
       {/* Results as cards */}
       <div className="space-y-2">
-        {results.map((fr) => (
+        {filteredResults.map((fr) => (
           <div
             key={fr.filename}
             className={`bg-white rounded-xl shadow-sm border transition ${
