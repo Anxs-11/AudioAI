@@ -47,7 +47,6 @@ def _get_finetuned_model():
         import json
         import torch
         import torch.nn as nn
-        from transformers import Wav2Vec2Model
         from pathlib import Path
 
         model_dir = Path(__file__).parent / "finetuned_emotion_model"
@@ -57,7 +56,9 @@ def _get_finetuned_model():
         _finetuned_labels = config["labels"]
 
         logger.info("Loading fine-tuned emotion model...")
-        _finetuned_model = Wav2Vec2Model.from_pretrained("superb/wav2vec2-base-superb-er")
+        # Reuse base encoder from original pipeline to avoid double memory usage
+        pipe = _get_original_pipe()
+        _finetuned_model = pipe.model.wav2vec2
         _finetuned_model.eval()
 
         _finetuned_classifier = nn.Sequential(
