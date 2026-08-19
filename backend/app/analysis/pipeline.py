@@ -39,7 +39,7 @@ from app.analysis.diarization import diarize_call
 logger = logging.getLogger(__name__)
 
 # Supported audio extensions
-SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".wma", ".aac", ".webm"}
+SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".wma", ".aac", ".webm", ".mp4"}
 
 
 def analyze_audio_file(file_path: str | Path) -> AnalysisResult:
@@ -112,17 +112,17 @@ def analyze_audio_file(file_path: str | Path) -> AnalysisResult:
     logger.info("  Assessing audio quality...")
     quality_result = assess_quality(audio, sr, acoustic_feat)
 
-    # ── Step 8b: Override overlap detection using diarization ───────────────
+    # ── Step 8b: Supplement overlap detection using diarization ──────────────
     # Diarization-based overlap: if speaker turns have very short gaps (<0.3s),
-    # speakers are likely talking over each other
+    # speakers are likely talking over each other (supplements acoustic detector)
     if len(diarization.segments) >= 3:
         short_gap_count = 0
         for i in range(1, len(diarization.segments)):
             gap = diarization.segments[i].start_sec - diarization.segments[i-1].end_sec
             if gap < 0.3 and diarization.segments[i].speaker != diarization.segments[i-1].speaker:
                 short_gap_count += 1
-        # Multiple very short inter-speaker gaps = overlap
-        acoustic_feat.speaker_overlap_detected = short_gap_count >= 2
+        if short_gap_count >= 2:
+            acoustic_feat.speaker_overlap_detected = True
 
     # ── Step 9: Ensemble ─────────────────────────────────────────────────
     logger.info("  Building ensemble result...")

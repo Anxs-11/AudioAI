@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import librosa
 import numpy as np
 
-from app.config import LONG_SILENCE_THRESHOLD_SEC, OVERLAP_ENERGY_RATIO, SAMPLE_RATE
+from app.config import LONG_SILENCE_THRESHOLD_SEC, SAMPLE_RATE
 
 
 @dataclass
@@ -153,15 +153,16 @@ def _detect_long_silence(
 def _detect_overlap(rms: np.ndarray) -> bool:
     """
     Heuristic for speaker overlap detection.
-    Looks for regions where energy is significantly above the local trend,
-    combined with rapid energy fluctuations that indicate two voices.
-    Calibrated: single emotional speaker (call_001) should NOT trigger,
-    but two speakers talking over each other (call_002/003) should.
+
+    Two conditions must both hold:
+      1. valley_shortness > 0.5: most energy valleys are brief (<10 frames ≈ 0.3s),
+         meaning another speaker fills the gaps. Single speakers have long pauses.
+      2. valley_ratio > 0.39: a meaningful fraction of time is spent in valleys.
+         This filters out continuous TTS/synthetic speech which has very few gaps.
     """
     if len(rms) < 20:
         return False
 
-    # Only look at voiced frames (above 30th percentile)
     voiced_threshold = np.percentile(rms, 30)
     voiced_rms = rms[rms > voiced_threshold]
     if len(voiced_rms) < 10:
@@ -171,22 +172,27 @@ def _detect_overlap(rms: np.ndarray) -> bool:
     if median_rms < 1e-6:
         return False
 
-    # Check for rapid alternating energy pattern (characteristic of overlap)
-    # Compute frame-to-frame energy differences in voiced regions
-    voiced_indices = np.where(rms > voiced_threshold)[0]
-    if len(voiced_indices) < 10:
+    # Detect energy valleys: runs of frames below half median energy
+    above = rms > median_rms * 0.5
+    runs_below = []
+    count = 0
+    for a in above:
+        if not a:
+            count += 1
+        elif count > 0:
+            runs_below.append(count)
+            count = 0
+
+    if len(runs_below) < 5:
         return False
 
-    diffs = np.abs(np.diff(rms[voiced_indices]))
-    mean_diff = np.mean(diffs)
-    rapid_change_ratio = np.mean(diffs > median_rms * 0.4)
+    short_valleys = sum(1 for r in runs_below if r < 10)
+    valley_shortness = short_valleys / len(runs_below)
 
-    # Overlap causes rapid energy fluctuations AND sustained high energy
-    spikes = rms > (median_rms * OVERLAP_ENERGY_RATIO)
-    spike_ratio = np.mean(spikes)
+    # Fraction of total frames spent in valleys
+    valley_ratio = sum(runs_below) / len(rms)
 
-    # Both conditions must hold: rapid changes AND energy spikes
-    return rapid_change_ratio > 0.15 and spike_ratio > 0.04
+    return valley_shortness > 0.5 and valley_ratio > 0.39
 
 
 def _estimate_snr(audio: np.ndarray, sr: int) -> float:

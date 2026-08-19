@@ -98,18 +98,14 @@ def analyze_noise(
     # Absolute noise floor energy (for detecting quiet but present noise)
     noise_rms = np.sqrt(np.mean(np.array(noise_segments) ** 2)) if noise_segments else 0
 
-    # ── Step 4: Classify severity ──────────────────────────────────────────
-    # Calibrated on real production calls:
-    #   call_001 (no noise): noise_rms ~0.002, ratio ~0.001
-    #   call_002 (TV, medium): noise_rms ~0.008, ratio ~0.05
-    #   call_003 (static, medium): noise_rms ~0.015, ratio ~0.03
-    if noise_ratio > 0.20 or noise_rms > 0.025:
+    # Thresholds based on noise_rms (ratio is unreliable due to scale mismatch)
+    if noise_rms > 0.012:
         result.severity = BackgroundNoiseSeverity.HIGH
         result.present = True
-    elif noise_ratio > 0.04 or noise_rms > 0.008:
+    elif noise_rms > 0.004:
         result.severity = BackgroundNoiseSeverity.MEDIUM
         result.present = True
-    elif noise_ratio > 0.015 or noise_rms > 0.004:
+    elif noise_rms > 0.0015:
         result.severity = BackgroundNoiseSeverity.LOW
         result.present = True
     else:
@@ -118,12 +114,12 @@ def analyze_noise(
         return result
 
     # ── Step 5: Classify noise type ────────────────────────────────────────
-    result.noise_type = _classify_noise_type(noise_floor, sr)
+    result.noise_type = _classify_noise_type(noise_floor, sr, noise_segments)
 
     return result
 
 
-def _classify_noise_type(noise_spectrum: np.ndarray, sr: int) -> str:
+def _classify_noise_type(noise_spectrum: np.ndarray, sr: int, noise_segments: list = None) -> str:
     """
     Classify the dominant noise type using hand-crafted spectral rules.
 
@@ -135,9 +131,22 @@ def _classify_noise_type(noise_spectrum: np.ndarray, sr: int) -> str:
       - keyboard typing: impulsive, mid-high frequency energy
       - wind: very low frequency, rapid modulation
       - mechanical noise: narrow low-frequency peak (hum)
+      - sharp static: impulsive crackling/popping (high crest + energy variance)
     """
     if noise_spectrum is None or np.max(noise_spectrum) < 1e-12:
         return ""
+
+    # ── Check for impulsive noise (static/crackle) first ─────────────────
+    if noise_segments and len(noise_segments) > 5:
+        noise_concat = np.concatenate(noise_segments)
+        n_rms = np.sqrt(np.mean(noise_concat ** 2))
+        peak = np.max(np.abs(noise_concat))
+        crest_factor = peak / n_rms if n_rms > 1e-8 else 0
+        frame_energies = [np.sqrt(np.mean(s ** 2)) for s in noise_segments]
+        energy_cv = np.std(frame_energies) / np.mean(frame_energies) if np.mean(frame_energies) > 1e-8 else 0
+        # High crest + high energy variance = impulsive crackling/static
+        if crest_factor > 50 and energy_cv > 3.0:
+            return "sharp static"
 
     total_energy = np.sum(noise_spectrum)
     if total_energy < 1e-12:
@@ -184,9 +193,8 @@ def _classify_noise_type(noise_spectrum: np.ndarray, sr: int) -> str:
         return "keyboard typing"
 
     # Office chatter / TV: mid-frequency dominant (speech range)
-    if mid_ratio > 0.45:
-        # TV has more harmonic structure; chatter is noisier
-        if flatness > 0.25:
+    if mid_ratio > 0.40:
+        if flatness > 0.30:
             return "office chatter"
         return "TV"
 

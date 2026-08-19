@@ -10,11 +10,19 @@ finetune_*.py
 diagnose_*.py
 train_*.py
 eval_esd.py
+eval_meld.py
+convert_meld_train.py
+generate_test_calls.py
 download_real_audio.py
 run_evaluation.py
 run_real_eval.py
 diagnose_calls.py
 test_e2e.py
+test_fields.py
+test_all_fields.py
+field_test_data/
+field_test_real/
+MELD.Features.Models/
 
 # Cached embeddings & results
 *.npz

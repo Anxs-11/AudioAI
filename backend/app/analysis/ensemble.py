@@ -265,18 +265,29 @@ def _transcript_keyword_boost(text: str) -> dict[EmotionalTone, float]:
     # Frustrated indicators (milder than upset)
     frustrated_words = ["annoying", "inconvenient", "waiting", "still not",
                         "already told", "not working", "broken", "issue",
-                        "wrong", "problem", "disappointing"]
+                        "wrong", "problem", "disappointing", "keeps happening",
+                        "going in circles", "didn't show up", "no one",
+                        "nothing has changed", "not resolved", "every month",
+                        "every time", "second time", "third time"]
     frustrated_count = sum(1 for w in frustrated_words if w in text_lower)
-    if frustrated_count >= 2:
-        boosts[EmotionalTone.FRUSTRATED] = 0.15
+    if frustrated_count >= 3:
+        boosts[EmotionalTone.FRUSTRATED] = 0.35
+    elif frustrated_count >= 2:
+        boosts[EmotionalTone.FRUSTRATED] = 0.25
     elif frustrated_count == 1:
-        boosts[EmotionalTone.FRUSTRATED] = 0.08
+        boosts[EmotionalTone.FRUSTRATED] = 0.15
 
-    # Distressed indicators
+    # Distressed indicators (overwhelmed, panicked, crying)
     distressed_words = ["help me", "please help", "emergency", "scared",
-                        "don't know what to do", "crying", "overwhelmed", "panic"]
-    if any(w in text_lower for w in distressed_words):
-        boosts[EmotionalTone.DISTRESSED] = 0.18
+                        "don't know what to do", "crying", "overwhelmed", "panic",
+                        "panicking", "shaking", "can't cope", "can't afford",
+                        "broke down", "broken into", "i need help", "please send",
+                        "i'm so", "can barely"]
+    distressed_count = sum(1 for w in distressed_words if w in text_lower)
+    if distressed_count >= 2:
+        boosts[EmotionalTone.DISTRESSED] = 0.40
+    elif distressed_count == 1:
+        boosts[EmotionalTone.DISTRESSED] = 0.28
 
     return boosts
 
@@ -299,6 +310,11 @@ def _compute_intensity(
     energy_factor = min(feat.rms_std / 0.08, 1.0) if feat.rms_std > 0 else 0.0
     energy_level = min(feat.rms_mean / 0.06, 1.0)
     model_factor = (tone_confidence + audio_model_confidence) / 2.0
+
+    # Discount energy when speaker overlap is detected (inflated by multiple voices)
+    if feat.speaker_overlap_detected:
+        energy_factor *= 0.5
+        energy_level *= 0.7
 
     composite = 0.30 * model_factor + 0.30 * pitch_factor + 0.25 * energy_factor + 0.15 * energy_level
 
