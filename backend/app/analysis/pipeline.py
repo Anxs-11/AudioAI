@@ -20,6 +20,7 @@ All models are loaded lazily as singletons on first use.
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import librosa
@@ -71,50 +72,40 @@ def analyze_audio_file(file_path: str | Path) -> AnalysisResult:
     if len(audio) < sr * 0.5:
         raise ValueError("Audio too short (< 0.5 seconds)")
 
-    # ── Step 2: Transcription (full audio, auto language detection) ────────
-    logger.info("  Transcribing with Whisper (auto language)...")
-    transcript = transcribe(audio, sr)
+    # ── Step 2: Parallel — Whisper, acoustic features, Wav2Vec2 ─────────
+    logger.info("  Running transcription, acoustic extraction, and audio emotion in parallel...")
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        future_transcript = executor.submit(transcribe, audio, sr)
+        future_acoustic = executor.submit(extract_features, audio, sr)
+        future_audio_emotion = executor.submit(classify_audio_emotion, audio, sr)
+
+        transcript = future_transcript.result()
+        acoustic_feat = future_acoustic.result()
+        audio_emotion = future_audio_emotion.result()
+
     logger.info("  Language: %s (%.0f%%), Transcript: %s",
                 transcript.language, transcript.language_probability * 100,
                 transcript.text[:80] + "..." if len(transcript.text) > 80 else transcript.text)
+    logger.info("  Audio emotion: %s (%.2f)", audio_emotion.label, audio_emotion.score)
 
     # ── Step 3: Speaker diarization — separate agent from customer ─────────
     logger.info("  Separating speakers...")
     diarization = diarize_call(audio, sr, transcript.word_timestamps)
     logger.info("  Customer text: %s", diarization.customer_text[:80] + "..." if len(diarization.customer_text) > 80 else diarization.customer_text)
 
-    # Use customer text for semantic analysis, but full audio for prosody
     customer_text = diarization.customer_text if diarization.customer_text else transcript.text
 
-    # ── Step 4: Acoustic features (full audio for noise/quality) ───────────
-    logger.info("  Extracting acoustic features...")
-    acoustic_feat = extract_features(audio, sr)
-
-    # ── Step 5: Audio emotion (FULL audio — prosody context matters) ───────
-    logger.info("  Classifying emotion from audio...")
-    audio_emotion = classify_audio_emotion(audio, sr)
-    logger.info("  Audio emotion: %s (%.2f)", audio_emotion.label, audio_emotion.score)
-
-    # ── Step 5b: Acoustic emotion (MFCC/pitch/energy based — pure voice tone) ─
+    # ── Step 4: Remaining classifiers (sequential — need outputs above) ────
     acoustic_emotion = classify_acoustic_emotion(acoustic_feat)
     logger.info("  Acoustic emotion: %s (%.2f)", acoustic_emotion.label, acoustic_emotion.score)
 
-    # ── Step 6: Text emotion (CUSTOMER text only — their words matter) ─────
-    logger.info("  Classifying emotion from customer text...")
     text_emotion = classify_text_emotion(customer_text)
     logger.info("  Text emotion: %s (%.2f)", text_emotion.label, text_emotion.score)
 
-    # ── Step 7: Background noise (full audio) ──────────────────────────────
-    logger.info("  Analyzing background noise...")
     noise_result = analyze_noise(audio, sr, acoustic_feat)
-
-    # ── Step 8: Audio quality (full audio) ─────────────────────────────────
-    logger.info("  Assessing audio quality...")
     quality_result = assess_quality(audio, sr, acoustic_feat)
 
-    # ── Step 8b: Supplement overlap detection using diarization ──────────────
-    # Diarization-based overlap: if speaker turns have very short gaps (<0.3s),
-    # speakers are likely talking over each other (supplements acoustic detector)
+    # ── Step 5: Supplement overlap detection using diarization ──────────────
     if len(diarization.segments) >= 3:
         short_gap_count = 0
         for i in range(1, len(diarization.segments)):

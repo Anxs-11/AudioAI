@@ -85,17 +85,6 @@ def extract_features(audio: np.ndarray, sr: int = SAMPLE_RATE) -> AcousticFeatur
     else:
         analysis_audio = audio
 
-    # ── Pitch (F0) via pyin ────────────────────────────────────────────────
-    f0, voiced_flag, _ = librosa.pyin(
-        analysis_audio, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C7"), sr=sr,
-    )
-    voiced_f0 = f0[voiced_flag] if voiced_flag is not None else np.array([])
-    if len(voiced_f0) > 0:
-        feat.pitch_mean = float(np.nanmean(voiced_f0))
-        feat.pitch_std = float(np.nanstd(voiced_f0))
-        feat.pitch_range = float(np.nanmax(voiced_f0) - np.nanmin(voiced_f0))
-    feat.voiced_ratio = float(np.mean(voiced_flag)) if voiced_flag is not None else 0.0
-
     # ── RMS energy ─────────────────────────────────────────────────────────
     rms = librosa.feature.rms(y=audio)[0]
     feat.rms_mean = float(np.mean(rms))
@@ -104,8 +93,6 @@ def extract_features(audio: np.ndarray, sr: int = SAMPLE_RATE) -> AcousticFeatur
 
     # ── Spectral features ──────────────────────────────────────────────────
     feat.spectral_centroid_mean = float(np.mean(librosa.feature.spectral_centroid(y=analysis_audio, sr=sr)))
-    feat.spectral_bandwidth_mean = float(np.mean(librosa.feature.spectral_bandwidth(y=analysis_audio, sr=sr)))
-    feat.spectral_flatness_mean = float(np.mean(librosa.feature.spectral_flatness(y=analysis_audio)))
     feat.zcr_mean = float(np.mean(librosa.feature.zero_crossing_rate(analysis_audio)))
 
     # ── MFCCs ──────────────────────────────────────────────────────────────

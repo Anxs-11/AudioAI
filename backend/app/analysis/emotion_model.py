@@ -82,10 +82,17 @@ def _get_finetuned_model():
 def _get_original_pipe():
     global _original_pipe
     if _original_pipe is None:
+        import torch
         from transformers import pipeline
         from app.config import AUDIO_EMOTION_MODEL
         logger.info("Loading original audio emotion model: %s", AUDIO_EMOTION_MODEL)
         _original_pipe = pipeline("audio-classification", model=AUDIO_EMOTION_MODEL, device=-1)
+        _original_pipe.model = torch.quantization.quantize_dynamic(
+            _original_pipe.model,
+            {torch.nn.Linear},
+            dtype=torch.qint8,
+        )
+        logger.info("Wav2Vec2 model quantized to INT8.")
     return _original_pipe
 
 

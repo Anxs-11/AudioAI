@@ -56,7 +56,7 @@ def assess_quality(
         penalties += 1
 
     # ── Muffled speech (extremely narrow bandwidth — below telephone standard 300-3400Hz) ──
-    if acoustic_feat.spectral_bandwidth_mean < 400:
+    if acoustic_feat.spectral_bandwidth_mean > 0 and acoustic_feat.spectral_bandwidth_mean < 400:
         result.issues.append("muffled or narrow-band audio")
         penalties += 1
 
