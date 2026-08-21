@@ -67,9 +67,9 @@ export default function Results() {
       </button>
       <h2 className="text-xl font-medium text-gray-900 mb-5">Batch #{batchId} Results</h2>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mt-4">{error}</div>
-        )}
+      {error && (
+        <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mt-4">{error}</div>
+      )}
 
         {/* Loading / Processing state */}
         {(!status || (status.status !== "completed" && status.status !== "failed")) && !error && (
@@ -175,7 +175,6 @@ export default function Results() {
             )}
           </>
         )}
-      </div>
     </div>
   );
 }
