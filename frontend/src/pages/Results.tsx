@@ -65,7 +65,7 @@ export default function Results() {
       >
         ← Back to history
       </button>
-      <h2 className="text-xl font-medium text-gray-900 mb-5">Batch #{batchId} Results</h2>
+      <h2 className="text-xl font-medium text-gray-100 mb-5">Batch #{batchId} Results</h2>
 
       {error && (
         <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mt-4">{error}</div>
@@ -110,13 +110,13 @@ export default function Results() {
             <div className="flex gap-2.5 mb-5">
               <button
                 onClick={() => downloadResults(id, "csv")}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium border border-white/10 bg-[#1a2236] hover:bg-[#1f2a42] text-gray-200 transition"
               >
                 ↓ Download CSV
               </button>
               <button
                 onClick={() => downloadResults(id, "json")}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium border border-white/10 bg-[#1a2236] hover:bg-[#1f2a42] text-gray-200 transition"
               >
                 ↓ Download JSON
               </button>

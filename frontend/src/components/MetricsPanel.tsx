@@ -219,18 +219,18 @@ export default function MetricsPanel({ metrics }: Props) {
 
 function StatCard({ label, value, subtitle }: { label: string; value: string; subtitle?: string }) {
   return (
-    <div className="bg-white rounded-xl shadow px-5 py-4 text-center">
-      <p className="text-xs text-slate-500 uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
-      {subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{subtitle}</p>}
+    <div className="bg-[#1a2236] border border-white/[0.08] rounded-xl px-5 py-4 text-center">
+      <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="text-2xl font-medium text-gray-100 mt-1">{value}</p>
+      {subtitle && <p className="text-[10px] text-gray-600 mt-0.5">{subtitle}</p>}
     </div>
   );
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl shadow p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-3">{title}</h3>
+    <div className="bg-[#1a2236] border border-white/[0.08] rounded-xl p-5">
+      <h3 className="text-[13px] font-medium text-gray-400 mb-3">{title}</h3>
       {children}
     </div>
   );

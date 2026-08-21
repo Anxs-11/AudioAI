@@ -64,9 +64,9 @@ export default function Upload() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      <h2 className="text-xl font-medium text-gray-900 mb-1">Upload audio for analysis</h2>
-      <p className="text-[13px] text-gray-500 mb-6">
-        Drop audio files or a ZIP archive. Optionally include a <code className="bg-gray-100 border border-gray-200 rounded px-1.5 py-0.5 text-[11px]">labels.csv</code> manifest.
+      <h2 className="text-xl font-medium text-gray-100 mb-1">Upload audio for analysis</h2>
+      <p className="text-[13px] text-gray-400 mb-6">
+        Drop audio files or a ZIP archive. Optionally include a <code className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-gray-300">labels.csv</code> manifest.
       </p>
 
       {!uploadResult && (
@@ -76,7 +76,7 @@ export default function Upload() {
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
             className={`border-[1.5px] border-dashed rounded-xl p-12 text-center transition cursor-pointer mb-5 ${
-              dragOver ? "border-[#2a78d6] bg-blue-50/30" : "border-gray-300 bg-white"
+              dragOver ? "border-[#2a78d6] bg-[#2a78d6]/10" : "border-white/10 bg-[#1a2236]"
             }`}
             onClick={() => document.getElementById("file-input")?.click()}
           >
@@ -101,20 +101,20 @@ export default function Upload() {
             <div className="text-[#2a78d6] text-3xl mb-3">🎵</div>
             {file ? (
               <div>
-                <p className="text-[15px] font-medium text-gray-800">{file.name}</p>
-                <p className="text-xs text-gray-400 mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                <p className="text-[15px] font-medium text-gray-200">{file.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
               </div>
             ) : audioFiles.length > 0 ? (
               <div>
-                <p className="text-[15px] font-medium text-gray-800">{audioFiles.length} audio file{audioFiles.length > 1 ? "s" : ""} selected</p>
+                <p className="text-[15px] font-medium text-gray-200">{audioFiles.length} audio file{audioFiles.length > 1 ? "s" : ""} selected</p>
                 <p className="text-xs text-gray-400 mt-1">
                   {audioFiles.slice(0, 3).map(f => f.name).join(", ")}{audioFiles.length > 3 ? ` +${audioFiles.length - 3} more` : ""}
                 </p>
               </div>
             ) : (
                 <div>
-                <h3 className="text-[15px] font-medium text-gray-800">Drag and drop audio files or a ZIP</h3>
-                <p className="text-xs text-gray-400 mt-1">or click to browse</p>
+                <h3 className="text-[15px] font-medium text-gray-200">Drag and drop audio files or a ZIP</h3>
+                <p className="text-xs text-gray-500 mt-1">or click to browse</p>
               </div>
             )}
           </div>
@@ -122,7 +122,7 @@ export default function Upload() {
           {/* Format pills */}
           <div className="flex flex-wrap gap-1.5 mb-5">
             {["WAV","MP3","OGG","FLAC","M4A","MPEG","AAC","WebM"].map(f => (
-              <span key={f} className="bg-gray-100 border border-gray-200 rounded-full px-2.5 py-0.5 text-[11px] text-gray-500">{f}</span>
+              <span key={f} className="bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-gray-400">{f}</span>
             ))}
           </div>
 

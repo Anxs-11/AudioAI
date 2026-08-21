@@ -11,7 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen flex bg-[#f8f9fb]">
+    <div className="min-h-screen flex bg-[#111827]">
       {/* Sidebar */}
       <aside className="w-52 bg-[#0f1623] text-white flex flex-col shrink-0">
         <div

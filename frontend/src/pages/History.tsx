@@ -23,7 +23,7 @@ export default function History() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <h2 className="text-xl font-medium text-gray-900 mb-5">Batch history</h2>
+      <h2 className="text-xl font-medium text-gray-100 mb-5">Batch history</h2>
 
       {loading ? (
         <div className="text-center py-20 text-gray-400">Loading...</div>
@@ -43,11 +43,11 @@ export default function History() {
             <div
               key={b.id}
               onClick={() => navigate(`/results/${b.id}`)}
-              className="bg-white rounded-xl border border-gray-100 hover:border-[#2a78d6] px-5 py-3.5 cursor-pointer transition flex items-center gap-4"
+              className="bg-[#1a2236] rounded-xl border border-white/[0.08] hover:border-[#2a78d6] px-5 py-3.5 cursor-pointer transition flex items-center gap-4"
             >
               <span className="text-[13px] text-gray-400 min-w-[28px]">#{b.id}</span>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-medium text-gray-200">
                   {b.total_files} file{b.total_files !== 1 ? "s" : ""}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
@@ -57,7 +57,7 @@ export default function History() {
               <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium ${statusColor[b.status] || "bg-gray-100"}`}>
                 {b.status}
               </span>
-              <span className="text-gray-300 text-sm">→</span>
+              <span className="text-gray-500 text-sm">→</span>
             </div>
           ))}
         </div>

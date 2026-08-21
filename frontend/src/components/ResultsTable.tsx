@@ -75,12 +75,12 @@ export default function ResultsTable({ results, batchId }: Props) {
           placeholder="Search files..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-48"
+          className="px-3 py-2 border border-white/10 bg-[#1a2236] rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2a78d6] w-48 placeholder-gray-500"
         />
         <select
           value={filterTone}
           onChange={(e) => setFilterTone(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+          className="px-3 py-2 border border-white/10 bg-[#1a2236] rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2a78d6]"
         >
           <option value="">All Tones</option>
           <option value="neutral">Neutral</option>
@@ -109,8 +109,8 @@ export default function ResultsTable({ results, batchId }: Props) {
         {filteredResults.map((fr) => (
           <div
             key={fr.filename}
-            className={`bg-white rounded-xl shadow-sm border transition ${
-              detailFile === fr.filename ? "border-slate-900 ring-1 ring-slate-900" : "border-gray-100 hover:border-slate-300"
+            className={`bg-[#1a2236] rounded-xl border transition ${
+              detailFile === fr.filename ? "border-[#2a78d6] ring-1 ring-[#2a78d6]" : "border-white/[0.08] hover:border-white/20"
             }`}
           >
             {/* Main row */}
@@ -130,7 +130,7 @@ export default function ResultsTable({ results, batchId }: Props) {
 
               {/* Filename */}
               <div className="min-w-[120px]">
-                <p className="text-sm font-medium text-slate-800 truncate">{fr.filename}</p>
+                <p className="text-sm font-medium text-gray-200 truncate">{fr.filename}</p>
               </div>
 
               {/* Quick stats */}
@@ -178,7 +178,7 @@ export default function ResultsTable({ results, batchId }: Props) {
 
             {/* Expanded detail panel */}
             {detailFile === fr.filename && fr.result && (
-              <div className="border-t border-gray-100 px-5 py-4 bg-slate-50/50 rounded-b-xl">
+              <div className="border-t border-white/[0.08] px-5 py-4 bg-[#151d2e] rounded-b-xl">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Audio player + waveform area */}
                   <div>
@@ -221,9 +221,9 @@ export default function ResultsTable({ results, batchId }: Props) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-lg px-3 py-2">
-      <p className="text-[10px] text-slate-400 uppercase">{label}</p>
-      <p className="text-sm font-medium text-slate-800 truncate">{value}</p>
+    <div className="bg-[#1a2236] border border-white/[0.08] rounded-lg px-3 py-2">
+      <p className="text-[10px] text-gray-500 uppercase">{label}</p>
+      <p className="text-sm font-medium text-gray-200 truncate">{value}</p>
     </div>
   );
 }
