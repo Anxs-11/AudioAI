@@ -82,24 +82,23 @@ export default function MetricsPanel({ metrics }: Props) {
     <div className="space-y-8 mt-8">
       {/* Insights banner */}
       {total > 0 && (
-        <div className="bg-gradient-to-r from-slate-900 to-slate-700 rounded-xl p-5 text-white">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-3">Batch Insights</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-3xl font-bold">{total}</p>
-              <p className="text-xs text-slate-300 mt-1">Files Analyzed</p>
+        <div className="bg-[#0f1623] rounded-xl p-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-0 text-center">
+            <div className="px-3 border-r border-white/10">
+              <p className="text-[28px] font-medium text-[#e87ba4] leading-none mb-1">{negativeCount}</p>
+              <p className="text-[11px] text-white/50">Negative emotions</p>
             </div>
-            <div>
-              <p className="text-3xl font-bold text-amber-400">{negativeCount}</p>
-              <p className="text-xs text-slate-300 mt-1">Negative Emotions</p>
+            <div className="px-3 border-r border-white/10">
+              <p className="text-[28px] font-medium text-[#1baf7a] leading-none mb-1">{noiseCount}</p>
+              <p className="text-[11px] text-white/50">Background noise</p>
             </div>
-            <div>
-              <p className="text-3xl font-bold text-blue-400">{noiseCount}</p>
-              <p className="text-xs text-slate-300 mt-1">With Background Noise</p>
+            <div className="px-3 border-r border-white/10">
+              <p className="text-[28px] font-medium text-[#7bb3f0] leading-none mb-1">{(metrics.average_confidence * 100).toFixed(0)}%</p>
+              <p className="text-[11px] text-white/50">Avg confidence</p>
             </div>
-            <div>
-              <p className="text-3xl font-bold text-emerald-400">{(metrics.average_confidence * 100).toFixed(0)}%</p>
-              <p className="text-xs text-slate-300 mt-1">Avg Confidence</p>
+            <div className="px-3">
+              <p className="text-[28px] font-medium text-[#eda100] leading-none mb-1">{metrics.overlap_count}</p>
+              <p className="text-[11px] text-white/50">Speaker overlaps</p>
             </div>
           </div>
         </div>

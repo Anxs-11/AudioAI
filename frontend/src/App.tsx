@@ -4,9 +4,10 @@ import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Results from "./pages/Results";
 import History from "./pages/History";
+import Layout from "./components/Layout";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  return isLoggedIn() ? children : <Navigate to="/login" replace />;
+  return isLoggedIn() ? <Layout>{children}</Layout> : <Navigate to="/login" replace />;
 }
 
 export default function App() {

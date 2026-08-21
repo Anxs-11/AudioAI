@@ -8,7 +8,6 @@ import {
   BatchMetrics,
   FileResult,
   downloadResults,
-  logout,
 } from "../api";
 import ProgressBar from "../components/ProgressBar";
 import ResultsTable from "../components/ResultsTable";
@@ -59,36 +58,14 @@ export default function Results() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top bar */}
-      <nav className="bg-slate-900 shadow-lg">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => navigate("/upload")}
-          >
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 9l3 11h12l3-11L12 2z" fill="white" />
-              <path d="M12 6l-5 4 2 6h6l2-6-5-4z" fill="#0f172a" />
-            </svg>
-            <h1 className="text-xl font-bold text-white">AutoAce</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/upload")}
-              className="text-sm text-slate-300 hover:text-white transition"
-            >
-              New Batch
-            </button>
-            <button onClick={logout} className="text-sm text-slate-300 hover:text-red-400 transition">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        <h2 className="text-2xl font-semibold text-slate-800 mb-1">Batch #{batchId} Results</h2>
+    <div className="p-8 max-w-6xl mx-auto">
+      <button
+        onClick={() => navigate("/history")}
+        className="flex items-center gap-1.5 text-[13px] text-[#2a78d6] hover:text-[#1e65b8] cursor-pointer mb-4 transition"
+      >
+        ← Back to history
+      </button>
+      <h2 className="text-xl font-medium text-gray-900 mb-5">Batch #{batchId} Results</h2>
 
         {error && (
           <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mt-4">{error}</div>
@@ -129,55 +106,60 @@ export default function Results() {
         {/* Completed summary */}
         {status && status.status === "completed" && (
           <>
-            <div className="flex flex-wrap gap-4 mt-6">
-              <div className="bg-white rounded-xl shadow px-6 py-4 flex-1 min-w-[150px]">
-                <p className="text-sm text-slate-500">Total Files</p>
-                <p className="text-2xl font-bold text-slate-800">{status.total_files}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow px-6 py-4 flex-1 min-w-[150px]">
-                <p className="text-sm text-slate-500">Succeeded</p>
-                <p className="text-2xl font-bold text-green-600">{status.processed_files}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow px-6 py-4 flex-1 min-w-[150px]">
-                <p className="text-sm text-slate-500">Failed</p>
-                <p className="text-2xl font-bold text-red-500">{status.failed_files}</p>
-              </div>
-            </div>
-
             {/* Download buttons */}
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2.5 mb-5">
               <button
                 onClick={() => downloadResults(id, "csv")}
-                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition"
               >
                 ↓ Download CSV
               </button>
               <button
                 onClick={() => downloadResults(id, "json")}
-                className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition"
               >
                 ↓ Download JSON
               </button>
             </div>
 
+            {/* KPI row */}
+            <div className="grid grid-cols-4 gap-2.5 mb-5">
+              <div className="bg-white border border-gray-100 rounded-xl px-4 py-3.5">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">Files analyzed</p>
+                <p className="text-[26px] font-medium text-gray-900 leading-none">{status.total_files}</p>
+              </div>
+              <div className="bg-white border border-gray-100 rounded-xl px-4 py-3.5">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">Succeeded</p>
+                <p className="text-[26px] font-medium text-[#1baf7a] leading-none">{status.processed_files}</p>
+              </div>
+              <div className="bg-white border border-gray-100 rounded-xl px-4 py-3.5">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">Failed</p>
+                <p className="text-[26px] font-medium text-[#e34948] leading-none">{status.failed_files}</p>
+              </div>
+              <div className="bg-white border border-gray-100 rounded-xl px-4 py-3.5">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">Avg confidence</p>
+                <p className="text-[26px] font-medium text-[#2a78d6] leading-none">{metrics ? `${(metrics.average_confidence * 100).toFixed(0)}%` : "—"}</p>
+              </div>
+            </div>
+
             {/* Tabs: Metrics / Table */}
-            <div className="flex border-b border-gray-200 mt-8">
+            <div className="flex border-b border-gray-200 mb-0">
               <button
                 onClick={() => setActiveTab("metrics")}
-                className={`px-5 py-2.5 text-sm font-medium border-b-2 transition ${
+                className={`px-5 py-2.5 text-[13px] font-medium border-b-2 transition ${
                   activeTab === "metrics"
-                    ? "border-slate-900 text-slate-900"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                    ? "border-[#2a78d6] text-[#2a78d6]"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
                 📊 Metrics &amp; Charts
               </button>
               <button
                 onClick={() => setActiveTab("table")}
-                className={`px-5 py-2.5 text-sm font-medium border-b-2 transition ${
+                className={`px-5 py-2.5 text-[13px] font-medium border-b-2 transition ${
                   activeTab === "table"
-                    ? "border-slate-900 text-slate-900"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                    ? "border-[#2a78d6] text-[#2a78d6]"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
                 📋 File Results &amp; Audio
@@ -193,7 +175,7 @@ export default function Results() {
             )}
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

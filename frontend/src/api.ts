@@ -133,7 +133,8 @@ export async function downloadResults(batchId: number, format: "csv" | "json") {
 
 export function getAudioUrl(batchId: number, filename: string): string {
   const token = localStorage.getItem("token");
-  return `/api/batch/${batchId}/audio/${encodeURIComponent(filename)}?token=${token}`;
+  const base = import.meta.env.VITE_API_URL || "/api";
+  return `${base}/batch/${batchId}/audio/${encodeURIComponent(filename)}?token=${token}`;
 }
 
 export interface BatchMetrics {

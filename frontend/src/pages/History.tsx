@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listBatches, BatchStatus, logout } from "../api";
+import { listBatches, BatchStatus } from "../api";
 
 export default function History() {
   const [batches, setBatches] = useState<BatchStatus[]>([]);
@@ -15,77 +15,53 @@ export default function History() {
   }, []);
 
   const statusColor: Record<string, string> = {
-    completed: "bg-green-100 text-green-700",
+    completed: "bg-[#eaf3de] text-[#3b6d11]",
     processing: "bg-blue-100 text-blue-700",
     pending: "bg-gray-100 text-gray-600",
     failed: "bg-red-100 text-red-700",
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-slate-900 shadow-lg">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/upload")}>
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 9l3 11h12l3-11L12 2z" fill="white" />
-              <path d="M12 6l-5 4 2 6h6l2-6-5-4z" fill="#0f172a" />
-            </svg>
-            <h1 className="text-xl font-bold text-white">AutoAce</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/upload")} className="text-sm text-slate-300 hover:text-white transition">
-              New Batch
-            </button>
-            <button onClick={logout} className="text-sm text-slate-300 hover:text-red-400 transition">
-              Sign Out
-            </button>
-          </div>
+    <div className="p-8 max-w-4xl mx-auto">
+      <h2 className="text-xl font-medium text-gray-900 mb-5">Batch history</h2>
+
+      {loading ? (
+        <div className="text-center py-20 text-gray-400">Loading...</div>
+      ) : batches.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-gray-400 mb-4">No batches yet</p>
+          <button
+            onClick={() => navigate("/upload")}
+            className="bg-[#2a78d6] hover:bg-[#1e65b8] text-white px-6 py-2.5 rounded-lg text-sm font-medium"
+          >
+            Upload Your First Batch
+          </button>
         </div>
-      </nav>
-
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        <h2 className="text-2xl font-semibold text-slate-800 mb-6">Batch History</h2>
-
-        {loading ? (
-          <div className="text-center py-20 text-slate-400">Loading...</div>
-        ) : batches.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-slate-400 mb-4">No batches yet</p>
-            <button
-              onClick={() => navigate("/upload")}
-              className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-lg text-sm font-medium"
+      ) : (
+        <div className="space-y-2.5">
+          {batches.map((b) => (
+            <div
+              key={b.id}
+              onClick={() => navigate(`/results/${b.id}`)}
+              className="bg-white rounded-xl border border-gray-100 hover:border-[#2a78d6] px-5 py-3.5 cursor-pointer transition flex items-center gap-4"
             >
-              Upload Your First Batch
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {batches.map((b) => (
-              <div
-                key={b.id}
-                onClick={() => navigate(`/results/${b.id}`)}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 hover:border-slate-300 px-6 py-4 cursor-pointer transition flex items-center gap-6"
-              >
-                <div className="text-lg font-bold text-slate-300 w-10">#{b.id}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[b.status] || "bg-gray-100"}`}>
-                      {b.status}
-                    </span>
-                    <span className="text-sm text-slate-600">
-                      {b.processed_files}/{b.total_files} files
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {new Date(b.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <div className="text-slate-400 text-sm">→</div>
+              <span className="text-[13px] text-gray-400 min-w-[28px]">#{b.id}</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">
+                  {b.total_files} file{b.total_files !== 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </p>
               </div>
-            ))}
-          </div>
-        )}
-      </main>
+              <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium ${statusColor[b.status] || "bg-gray-100"}`}>
+                {b.status}
+              </span>
+              <span className="text-gray-300 text-sm">→</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
