@@ -4,6 +4,8 @@ import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Results from "./pages/Results";
 import History from "./pages/History";
+import Validation from "./pages/Validation";
+import Methodology from "./pages/Methodology";
 import Layout from "./components/Layout";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -35,6 +37,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <History />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/validation"
+        element={
+          <ProtectedRoute>
+            <Validation />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/methodology"
+        element={
+          <ProtectedRoute>
+            <Methodology />
           </ProtectedRoute>
         }
       />

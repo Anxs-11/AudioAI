@@ -22,8 +22,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.analysis.pipeline import SUPPORTED_EXTENSIONS, analyze_audio_file
 from app.auth import get_current_user
@@ -432,20 +433,40 @@ async def list_batches(
     user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Batch).where(Batch.user_id == user.id).order_by(Batch.created_at.desc())
+        select(Batch)
+        .options(selectinload(Batch.results))
+        .where(Batch.user_id == user.id)
+        .order_by(Batch.created_at.desc())
     )
     batches = result.scalars().all()
-    return [
-        BatchStatusResponse(
+    out = []
+    for b in batches:
+        first_filename = None
+        dominant_tone = None
+        if b.results:
+            first_filename = b.results[0].filename
+            tone_counts: dict[str, int] = {}
+            for fr in b.results:
+                if fr.result_json:
+                    try:
+                        tone = json.loads(fr.result_json).get("emotional_tone")
+                        if tone:
+                            tone_counts[tone] = tone_counts.get(tone, 0) + 1
+                    except (json.JSONDecodeError, AttributeError):
+                        pass
+            if tone_counts:
+                dominant_tone = max(tone_counts, key=tone_counts.get)  # type: ignore[arg-type]
+        out.append(BatchStatusResponse(
             id=b.id,
             status=b.status,
             total_files=b.total_files,
             processed_files=b.processed_files,
             failed_files=b.failed_files,
             created_at=b.created_at.isoformat() if b.created_at else "",
-        )
-        for b in batches
-    ]
+            first_filename=first_filename,
+            dominant_tone=dominant_tone,
+        ))
+    return out
 
 
 # ── Background processing ─────────────────────────────────────────────────────

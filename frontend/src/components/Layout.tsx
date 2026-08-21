@@ -4,6 +4,8 @@ import { logout } from "../api";
 const NAV_ITEMS = [
   { path: "/upload", label: "New Batch", icon: "⬆" },
   { path: "/history", label: "History", icon: "📋" },
+  { path: "/validation", label: "Validation", icon: "✓" },
+  { path: "/methodology", label: "Methodology", icon: "📄" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

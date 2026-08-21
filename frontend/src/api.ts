@@ -82,6 +82,8 @@ export interface BatchStatus {
   processed_files: number;
   failed_files: number;
   created_at: string;
+  first_filename?: string;
+  dominant_tone?: string;
 }
 
 export async function getBatchStatus(batchId: number): Promise<BatchStatus> {

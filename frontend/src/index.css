@@ -2,24 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 :root {
-  --bg-main: #111827;
-  --bg-card: #1a2236;
-  --bg-card-hover: #1f2a42;
-  --border: rgba(255,255,255,0.08);
+  --bg-main: #0c111b;
+  --bg-card: #151d2e;
+  --bg-card-hover: #1a2540;
+  --bg-surface: #111827;
+  --border: rgba(255,255,255,0.07);
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
-  --accent: #2a78d6;
-}
-
-body {
-  background: var(--bg-main);
-  color: var(--text-primary);
+  --accent: #5b8def;
 }
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply antialiased;
+    background: var(--bg-main);
+    color: var(--text-primary);
   }
 }

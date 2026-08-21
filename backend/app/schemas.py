@@ -73,6 +73,8 @@ class BatchStatusResponse(BaseModel):
     processed_files: int
     failed_files: int
     created_at: str
+    first_filename: Optional[str] = None
+    dominant_tone: Optional[str] = None
 
 
 class FileResultResponse(BaseModel):
