@@ -455,6 +455,8 @@ async def _process_batch(batch_id: int):
     Process every audio file in a batch. Runs as a background task.
     Each file is processed independently — one failure does not block others.
     """
+    import asyncio
+
     async with async_session() as db:
         batch = await db.get(Batch, batch_id)
         if not batch:
@@ -472,12 +474,12 @@ async def _process_batch(batch_id: int):
             await db.commit()
 
             try:
-                # Find the actual file (might be in a subfolder)
                 file_path = _find_file(batch_dir, fr.filename)
                 if file_path is None:
                     raise FileNotFoundError(f"File not found: {fr.filename}")
 
-                analysis = analyze_audio_file(file_path)
+                # Run CPU-heavy analysis in thread pool to avoid blocking the event loop
+                analysis = await asyncio.to_thread(analyze_audio_file, file_path)
                 fr.result_json = analysis.model_dump_json()
                 fr.status = "completed"
                 batch.processed_files += 1
