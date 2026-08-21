@@ -21,8 +21,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           onClick={() => navigate("/upload")}
         >
           <div className="w-7 h-7 bg-[#2a78d6] rounded-md flex items-center justify-center">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M2 12h4l3-9 4 18 3-9h4" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 9l3 11h12l3-11L12 2z" fill="white" />
+              <path d="M12 6l-5 4 2 6h6l2-6-5-4z" fill="#2a78d6" />
             </svg>
           </div>
           <span className="text-sm font-medium">AutoAce</span>

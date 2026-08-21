@@ -66,7 +66,7 @@ export default function Upload() {
     <div className="p-8 max-w-2xl mx-auto">
       <h2 className="text-xl font-medium text-gray-100 mb-1">Upload audio for analysis</h2>
       <p className="text-[13px] text-gray-400 mb-6">
-        Drop audio files or a ZIP archive. Optionally include a <code className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-gray-300">labels.csv</code> manifest.
+        Drop audio files or a ZIP archive.
       </p>
 
       {!uploadResult && (

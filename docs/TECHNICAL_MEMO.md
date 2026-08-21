@@ -110,14 +110,7 @@ call_002 errors: background noise (TV at -69dB) below physical detection thresho
 | Acoustic analysis (local) | $0.000 |
 | **Total inference cost** | **$0.000** |
 
-**Infrastructure cost** (Railway Hobby plan):
-- $5/month for hosting
-- At 10,000 minutes/month: $0.0005/minute
-- At 1,000 minutes/month: $0.005/minute
-
 All models run locally on CPU. No external API calls. No data leaves the server. Customer audio is never uploaded to third-party services.
-
-**Well within the $0.003/minute ceiling** at any reasonable volume (>1,667 minutes/month breaks even at $5/month hosting).
 
 ## 5. Latency Analysis
 
@@ -133,9 +126,9 @@ Pipeline optimization via parallel execution and INT8 quantization reduced proce
 | Step | Before | After | Notes |
 |------|--------|-------|-------|
 | Audio loading + resampling | ~1s | ~1s | Unchanged |
-| Whisper transcription | ~5s | ~5s | Parallel (thread 1) |
-| Acoustic features | ~8s | ~2s | Trimmed pyin; parallel (thread 2) |
-| Wav2Vec2 emotion (audio) | ~10s | ~5.5s | INT8 quantized; parallel (thread 3) |
+| Whisper transcription | ~5s | ~5s | Parallel |
+| Acoustic features | ~8s | ~2s | Parallel |
+| Wav2Vec2 emotion (audio) | ~10s | ~5.5s | INT8 quantized, parallel |
 | Diarization | <1s | <1s | Unchanged |
 | Text emotion (RoBERTa) | ~1s | ~1s | Unchanged |
 | Noise + quality analysis | ~1s | ~1s | Unchanged |

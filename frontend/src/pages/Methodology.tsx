@@ -65,13 +65,7 @@ export default function Methodology() {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 bg-[#0c111b] rounded-lg p-4 text-xs text-gray-400 leading-relaxed">
-            <p className="text-gray-200 font-medium mb-2">Infrastructure cost example:</p>
-            <p>Railway Hobby plan: <Strong>$5/month</Strong></p>
-            <p>At 10,000 min/month: $5 ÷ 10,000 = <Strong>$0.0005/min</Strong></p>
-            <p>At 1,000 min/month: $5 ÷ 1,000 = <Strong>$0.005/min</Strong></p>
-            <p className="mt-2 text-emerald-300">Well within the $0.003/min ceiling at &gt;1,667 min/month.</p>
-          </div>
+
         </Section>
 
         {/* Latency */}
@@ -95,9 +89,9 @@ export default function Methodology() {
               <tbody className="divide-y divide-white/[0.05]">
                 {[
                   ["Audio loading + resampling", "~1s", "~1s"],
-                  ["Whisper transcription", "~5s", "~5s ∥"],
-                  ["Acoustic features (librosa)", "~8s", "~2s ∥"],
-                  ["Wav2Vec2 emotion (audio)", "~10s", "~5.5s ∥"],
+                  ["Whisper transcription", "~5s", "~5s"],
+                  ["Acoustic features (librosa)", "~8s", "~2s"],
+                  ["Wav2Vec2 emotion (audio)", "~10s", "~5.5s"],
                   ["Diarization", "<1s", "<1s"],
                   ["Text emotion (RoBERTa)", "~1s", "~1s"],
                   ["Noise + quality analysis", "~1s", "~1s"],

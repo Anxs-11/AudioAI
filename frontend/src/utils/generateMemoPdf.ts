@@ -177,12 +177,7 @@ export function downloadMemoPdf() {
   tableRow(["Acoustic analysis (local)", "$0.000"], cw);
   tableRow(["Total inference cost", "$0.000"], cw, false, GREEN as unknown as RGB);
   y += 3;
-  subheading("Infrastructure Cost");
-  para("Railway Hobby plan: $5/month hosting.");
-  para("At 10,000 min/month: $5 ÷ 10,000 = $0.0005/min");
-  para("At 1,000 min/month: $5 ÷ 1,000 = $0.005/min");
-  para("Well within the $0.003/min ceiling at >1,667 min/month.");
-  y += 3;
+
 
   // 4. Latency
   heading("4. Latency Per Clip");
@@ -198,9 +193,9 @@ export function downloadMemoPdf() {
   const bw = [80, 35, 35];
   tableRow(["Step", "Before", "After"], bw, true);
   tableRow(["Audio loading + resampling", "~1s", "~1s"], bw);
-  tableRow(["Whisper transcription", "~5s", "~5s ∥"], bw);
-  tableRow(["Acoustic features (librosa)", "~8s", "~2s ∥"], bw);
-  tableRow(["Wav2Vec2 emotion (audio)", "~10s", "~5.5s ∥"], bw);
+  tableRow(["Whisper transcription", "~5s", "~5s"], bw);
+  tableRow(["Acoustic features (librosa)", "~8s", "~2s"], bw);
+  tableRow(["Wav2Vec2 emotion (audio)", "~10s", "~5.5s"], bw);
   tableRow(["Diarization", "<1s", "<1s"], bw);
   tableRow(["Text emotion (RoBERTa)", "~1s", "~1s"], bw);
   tableRow(["Noise + quality analysis", "~1s", "~1s"], bw);

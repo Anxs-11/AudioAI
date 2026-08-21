@@ -79,7 +79,7 @@ Each audio file produces:
 | Tone accuracy (production calls) | 100% (3/3) |
 | Overall field accuracy | 87.5% (21/24) |
 | Non-emotion field accuracy | 99% (367/372 on 93 samples) |
-| Processing speed | 0.6–0.9x realtime |
+| Processing speed | ~0.5× realtime (optimized) |
 | Inference cost | $0.000/min (all local) |
 
 ## Project Structure
@@ -127,11 +127,4 @@ docs/
 ## Cost Model
 
 All inference runs locally on CPU — no external API calls, no data leaves the server.
-
-| Volume | Hosting Cost | Per-Minute Cost |
-|--------|-------------|-----------------|
-| 1,000 min/month | $5 (Railway) | $0.005 |
-| 5,000 min/month | $5 (Railway) | $0.001 |
-| 10,000+ min/month | $5 (Railway) | <$0.001 |
-
-Comfortably within the $0.003/minute ceiling at production volumes.
+Total inference cost: **$0.000/min** (Whisper, Wav2Vec2, RoBERTa, acoustic analysis all run locally).
