@@ -165,6 +165,12 @@ export default function Upload() {
             >
               {processing ? "Starting analysis…" : "Start Analysis"}
             </button>
+            <button
+              onClick={() => { setUploadResult(null); setFile(null); setAudioFiles([]); }}
+              className="w-full mt-2 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+            >
+              ← Back
+            </button>
           </div>
         )}
 
