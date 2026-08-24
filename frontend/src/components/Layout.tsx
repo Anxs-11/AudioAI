@@ -4,7 +4,7 @@ import { logout } from "../api";
 const NAV_ITEMS = [
   { path: "/upload", label: "New Batch", icon: "⬆" },
   { path: "/history", label: "History", icon: "📋" },
-  { path: "/validation", label: "Validation", icon: "✓" },
+  { path: "/validation", label: "Validation", icon: "📊" },
   { path: "/methodology", label: "Methodology", icon: "📄" },
 ];
 
