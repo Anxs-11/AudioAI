@@ -105,7 +105,7 @@ export default function Validation() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-500">
-                Synthetic calls (designed to mimic production patterns) achieve 63.3%. RAVDESS acted speech is out-of-distribution
+                Synthetic calls (designed to mimic production patterns) achieve 60.0%. RAVDESS acted speech is out-of-distribution
                 and drags the overall average — this is expected since the model is optimized for real call center audio, not acted performances.
               </p>
             </SectionCard>
