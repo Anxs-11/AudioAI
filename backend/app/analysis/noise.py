@@ -52,7 +52,7 @@ def analyze_noise(
     if len(rms) < 20:
         return result
 
-    # ── Step 1: Identify noise-only frames ─────────────────────────────────
+    # Identify noise-only frames
     # Use the 15th percentile as the speech/silence boundary
     # Frames below this are likely noise-only (or silence)
     energy_threshold = np.percentile(rms, 20)
@@ -81,14 +81,14 @@ def analyze_noise(
     if not noise_segments:
         return result
 
-    # ── Step 2: Compute noise floor spectrum ───────────────────────────────
+    # Compute noise floor spectrum
     noise_spectra = []
     for seg in noise_segments:
         spec = np.abs(np.fft.rfft(seg, n=512)) ** 2
         noise_spectra.append(spec)
     noise_floor = np.mean(noise_spectra, axis=0)
 
-    # ── Step 3: Determine if noise is meaningful ───────────────────────────
+    # Determine if noise is meaningful
     # Compare noise floor energy to the median speech frame energy
     speech_mask = rms > np.percentile(rms, 50)
     speech_energy = np.mean(rms[speech_mask] ** 2) if np.any(speech_mask) else 1e-10
@@ -118,7 +118,7 @@ def analyze_noise(
         result.present = False
         return result
 
-    # ── Step 5: Classify noise type ────────────────────────────────────────
+    # Classify noise type
     result.noise_type = _classify_noise_type(noise_floor, sr, noise_segments)
 
     return result
@@ -141,7 +141,7 @@ def _classify_noise_type(noise_spectrum: np.ndarray, sr: int, noise_segments: li
     if noise_spectrum is None or np.max(noise_spectrum) < 1e-12:
         return ""
 
-    # ── Check for impulsive noise (static/crackle) first ─────────────────
+    # Check for impulsive noise (static/crackle) first
     if noise_segments and len(noise_segments) > 5:
         noise_concat = np.concatenate(noise_segments)
         n_rms = np.sqrt(np.mean(noise_concat ** 2))
@@ -176,7 +176,7 @@ def _classify_noise_type(noise_spectrum: np.ndarray, sr: int, noise_segments: li
     arith_mean = np.mean(noise_spectrum)
     flatness = geo_mean / arith_mean if arith_mean > 1e-12 else 0.0
 
-    # ── Classification rules ──────────────────────────────────────────────
+    # Classification rules
     # Static / digital artifacts: high-frequency dominant, very flat spectrum
     if high_ratio > 0.4 and flatness > 0.4:
         return "sharp static"

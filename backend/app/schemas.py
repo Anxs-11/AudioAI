@@ -9,7 +9,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-# ── Output enums (must match spec exactly) ─────────────────────────────────────
+# Output enums (must match spec exactly)
 
 class EmotionalTone(str, Enum):
     NEUTRAL = "neutral"
@@ -38,7 +38,7 @@ class AudioQuality(str, Enum):
     SEVERELY_IMPAIRED = "severely_impaired"
 
 
-# ── Core analysis result (returned per audio clip) ────────────────────────────
+# Core analysis result (returned per audio clip)
 
 class AnalysisResult(BaseModel):
     emotional_tone: EmotionalTone
@@ -52,7 +52,7 @@ class AnalysisResult(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
-# ── Authentication ─────────────────────────────────────────────────────────────
+# Authentication
 
 class LoginRequest(BaseModel):
     username: str
@@ -64,7 +64,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-# ── Batch tracking ─────────────────────────────────────────────────────────────
+# Batch tracking
 
 class BatchStatusResponse(BaseModel):
     id: int

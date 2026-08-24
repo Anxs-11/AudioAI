@@ -561,7 +561,7 @@ async def list_batches(
 async def _process_batch(batch_id: int):
     """
     Process every audio file in a batch. Runs as a background task.
-    Each file is processed independently — one failure does not block others.
+    Each file is processed sequentially to avoid SQLAlchemy session corruption.
     """
     import asyncio
 
@@ -577,29 +577,22 @@ async def _process_batch(batch_id: int):
 
         batch_dir = UPLOAD_DIR / str(batch_id) / "files"
 
-        sem = asyncio.Semaphore(2)
-
-        async def _process_file(fr):
-            await sem.acquire()
-            # Check if batch was cancelled before starting this file
+        for fr in file_results:
             await db.refresh(batch)
             if batch.status == "cancelled":
-                if fr.status != "completed":
-                    fr.status = "cancelled"
-                    await db.commit()
-                sem.release()
-                return
-
-            fr.status = "processing"
-            await db.commit()
+                fr.status = "cancelled"
+                await db.commit()
+                continue
 
             converted_path = None
             try:
+                fr.status = "processing"
+                await db.commit()
+
                 file_path = _find_file(batch_dir, fr.filename)
                 if file_path is None:
                     raise FileNotFoundError(f"File not found: {fr.filename}")
 
-                # Convert non-WAV formats to WAV via ffmpeg so librosa can load them
                 actual_path = str(file_path)
                 if file_path.suffix.lower() in (".webm", ".m4a", ".aac", ".mp4", ".mpeg", ".wma"):
                     import subprocess
@@ -629,11 +622,8 @@ async def _process_batch(batch_id: int):
             finally:
                 if converted_path and converted_path.exists():
                     converted_path.unlink(missing_ok=True)
-                sem.release()
 
             await db.commit()
-
-        await asyncio.gather(*[_process_file(fr) for fr in file_results])
 
         await db.refresh(batch)
         if batch.status != "cancelled":

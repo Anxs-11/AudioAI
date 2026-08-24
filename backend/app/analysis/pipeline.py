@@ -2,20 +2,6 @@
 Main analysis pipeline: orchestrates all sub-modules to produce a single
 AnalysisResult for a given audio file.
 
-Pipeline flow:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  1. Load & preprocess audio  (→ 16 kHz mono float32)               │
-  │  2. Run in parallel:                                               │
-  │       a. Whisper transcription → text                              │
-  │       b. Acoustic feature extraction (librosa)                     │
-  │  3. Run emotion classifiers:                                       │
-  │       a. Audio emotion  (wav2vec2 on waveform)                     │
-  │       b. Text emotion   (distilRoBERTa on transcript)              │
-  │  4. Background noise analysis  (from acoustic features)            │
-  │  5. Audio quality assessment   (from acoustic features + signal)   │
-  │  6. Ensemble → final AnalysisResult                                │
-  └──────────────────────────────────────────────────────────────────────┘
-
 All models are loaded lazily as singletons on first use.
 """
 
@@ -61,20 +47,20 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
     file_path = Path(file_path)
     t0 = time.time()
 
-    # ── Validate file ──────────────────────────────────────────────────────
+    # Validate file
     if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise ValueError(f"Unsupported audio format: {file_path.suffix}")
 
     logger.info("Analyzing: %s", file_path.name)
 
-    # ── Step 1: Load and preprocess ────────────────────────────────────────
+    # Load and preprocess
     audio, sr = _load_audio(file_path)
     logger.info("  Loaded: %.1f sec, %d Hz", len(audio) / sr, sr)
 
     if len(audio) < sr * 0.5:
         raise ValueError("Audio too short (< 0.5 seconds)")
 
-    # ── Step 2: Parallel — Whisper, acoustic features, Wav2Vec2 ─────────
+    # Parallel — Whisper, acoustic features, Wav2Vec2
     logger.info("  Running transcription, acoustic extraction, and audio emotion in parallel...")
     t_step = time.time()
     with ThreadPoolExecutor(max_workers=4) as executor:
@@ -94,7 +80,7 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
                 transcript.text[:80] + "..." if len(transcript.text) > 80 else transcript.text)
     logger.info("  Audio emotion: %s (%.2f)", audio_emotion.label, audio_emotion.score)
 
-    # ── Step 3: Speaker diarization — separate agent from customer ─────────
+    # Speaker diarization — separate agent from customer
     logger.info("  Separating speakers...")
     t_step = time.time()
     diarization = diarize_call(audio, sr, transcript.word_timestamps)
@@ -114,7 +100,7 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
         audio_emotion = EmotionPrediction(label=top, score=float(blended[top]), all_scores=blended)
         logger.info("  Customer-only emotion: %s (%.2f)", audio_emotion.label, audio_emotion.score)
 
-    # ── Step 4: Remaining classifiers (sequential — need outputs above) ────
+    # Remaining classifiers (sequential — need outputs above)
     t_step = time.time()
     acoustic_emotion = classify_acoustic_emotion(acoustic_feat)
     logger.info("  Acoustic emotion: %s (%.2f)", acoustic_emotion.label, acoustic_emotion.score)
@@ -126,7 +112,7 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
     quality_result = assess_quality(audio, sr, acoustic_feat)
     classifiers_sec = round(time.time() - t_step, 2)
 
-    # ── Step 5: Supplement overlap detection using diarization ──────────────
+    # Supplement overlap detection using diarization
     if len(diarization.segments) >= 3:
         short_gap_count = 0
         for i in range(1, len(diarization.segments)):
@@ -136,7 +122,7 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
         if short_gap_count >= 2:
             acoustic_feat.speaker_overlap_detected = True
 
-    # ── Step 9: Ensemble ─────────────────────────────────────────────────
+    # Ensemble
     logger.info("  Building ensemble result...")
     result = build_result(
         audio_emotion=audio_emotion,

@@ -28,7 +28,7 @@ from app.schemas import (
 )
 
 
-# ── Mapping tables ─────────────────────────────────────────────────────────────
+# Mapping tables
 # Fine-tuned model outputs our labels directly
 AUDIO_LABEL_MAP: dict[str, EmotionalTone] = {
     "neutral":    EmotionalTone.NEUTRAL,
@@ -94,7 +94,7 @@ def build_result(
       5. Compute overall confidence from agreement between models.
     """
 
-    # ── Step 1-2: Weighted voting ──────────────────────────────────────────
+    # 2: Weighted voting
     votes: dict[EmotionalTone, float] = {tone: 0.0 for tone in EmotionalTone}
 
     # Audio model votes (with uncertainty handling)
@@ -123,7 +123,7 @@ def build_result(
     if is_non_english:
         votes[EmotionalTone.NEUTRAL] += W_AUDIO * 0.15
 
-    # ── Acoustic classifier votes (trained on MFCC/pitch/energy features) ──
+    # Acoustic classifier votes (trained on MFCC/pitch/energy features)
     # Skip vote entirely when the classifier model is unavailable (empty all_scores)
     if acoustic_emotion.all_scores:
         clf_weight = W_ACOUSTIC_CLF if audio_is_uncertain else W_ACOUSTIC_CLF * 0.5
@@ -150,7 +150,7 @@ def build_result(
     acoustic_tone = _acoustic_emotion_hint(acoustic_feat)
     votes[acoustic_tone] += W_ACOUSTIC
 
-    # ── Dimensional model votes (arousal/valence → 5-class) ────────────────
+    # Dimensional model votes (arousal/valence → 5-class)
     if dim_emotion and dim_emotion.all_scores:
         DIM_MAP = {"neutral": EmotionalTone.NEUTRAL, "satisfied": EmotionalTone.SATISFIED,
                     "frustrated": EmotionalTone.FRUSTRATED, "upset": EmotionalTone.UPSET,
@@ -159,14 +159,14 @@ def build_result(
             mapped = DIM_MAP.get(label, EmotionalTone.NEUTRAL)
             votes[mapped] += score * W_DIM
 
-    # ── Step 2b: Transcript keyword boosting ───────────────────────────────
+    # Transcript keyword boosting
     # Use customer text for keyword analysis (not full transcript with agent)
     boost_text = customer_text if customer_text else transcript.text
     keyword_boost = _transcript_keyword_boost(boost_text)
     for tone, boost in keyword_boost.items():
         votes[tone] += boost
 
-    # ── Step 2c: Context override for service calls ────────────────────────
+    # Context override for service calls
     # When strong cooperative language + uncertain audio = satisfied customer
     satisfied_boost = keyword_boost.get(EmotionalTone.SATISFIED, 0)
     upset_boost = keyword_boost.get(EmotionalTone.UPSET, 0)
@@ -174,18 +174,18 @@ def build_result(
         votes[EmotionalTone.SATISFIED] += 0.20
         votes[EmotionalTone.NEUTRAL] -= 0.10
 
-    # ── Step 3: Pick winner ────────────────────────────────────────────────
+    # Pick winner
     emotional_tone = max(votes, key=lambda t: votes[t])
     winner_score = votes[emotional_tone]
     total_votes = sum(votes.values())
     tone_confidence = winner_score / total_votes if total_votes > 0 else 0.5
 
-    # ── Step 4: Intensity ──────────────────────────────────────────────────
+    # Intensity
     emotional_intensity = _compute_intensity(
         tone_confidence, audio_emotion.score, acoustic_feat,
     )
 
-    # ── Step 5: Overall confidence ─────────────────────────────────────────
+    # Overall confidence
     # Base confidence from the ensemble vote margin + individual model strengths
     audio_mapped = AUDIO_LABEL_MAP.get(audio_emotion.label, EmotionalTone.NEUTRAL)
     text_mapped = TEXT_LABEL_MAP.get(text_emotion.label, EmotionalTone.NEUTRAL)
@@ -223,7 +223,7 @@ def build_result(
     )
 
 
-# ── Private helpers ────────────────────────────────────────────────────────────
+# Private helpers
 
 def _acoustic_emotion_hint(feat: AcousticFeatures) -> EmotionalTone:
     """

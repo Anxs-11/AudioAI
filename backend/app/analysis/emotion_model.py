@@ -33,7 +33,7 @@ class EmotionPrediction:
     all_scores: dict[str, float] = field(default_factory=dict)
 
 
-# ── Audio emotion model (fine-tuned on RAVDESS with our 5 classes) ─────────────
+# Audio emotion model (fine-tuned on RAVDESS with our 5 classes)
 
 _finetuned_model = None
 _finetuned_classifier = None
@@ -103,12 +103,12 @@ def classify_audio_emotion(audio: np.ndarray, sr: int = 16_000) -> EmotionPredic
     """
     import torch
 
-    # ── Original model (robust on real-world audio) ────────────────────────
+    # Original model (robust on real-world audio)
     pipe = _get_original_pipe()
     raw_scores = pipe({"raw": audio, "sampling_rate": sr})
     orig_scores = {item["label"]: item["score"] for item in raw_scores}
 
-    # ── Fine-tuned model (5 classes, segmented) ────────────────────────────
+    # Fine-tuned model (5 classes, segmented)
     base, classifier, labels = _get_finetuned_model()
     seg_len = 4 * sr
     if len(audio) <= seg_len:
@@ -130,7 +130,7 @@ def classify_audio_emotion(audio: np.ndarray, sr: int = 16_000) -> EmotionPredic
     ft_probs = np.mean(all_probs, axis=0)
     ft_scores = {label: float(prob) for label, prob in zip(labels, ft_probs)}
 
-    # ── Blend: dynamic weighting based on original model confidence ──────
+    # Blend: dynamic weighting based on original model confidence
     ORIG_MAP = {"ang": "upset", "hap": "satisfied", "neu": "neutral", "sad": "frustrated"}
     blended = {l: 0.0 for l in labels}
 
@@ -157,7 +157,7 @@ def classify_audio_emotion(audio: np.ndarray, sr: int = 16_000) -> EmotionPredic
     )
 
 
-# ── Text emotion model ────────────────────────────────────────────────────────
+# Text emotion model
 
 def _get_text_pipe():
     global _text_emotion_pipe
@@ -213,7 +213,7 @@ def classify_text_emotion(text: str) -> EmotionPrediction:
     )
 
 
-# ── Acoustic emotion classifier (MFCC + pitch + energy based) ─────────────────
+# Acoustic emotion classifier (MFCC + pitch + energy based)
 
 _acoustic_clf = None
 _acoustic_scaler = None
@@ -280,7 +280,7 @@ def classify_acoustic_emotion(acoustic_feat) -> EmotionPrediction:
     )
 
 
-# ── Dimensional emotion model — DISABLED ──────────────────────────────────────
+# Dimensional emotion model — DISABLED
 # The audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim model requires a
 # custom RegressionHead that outputs [arousal, dominance, valence]. Without it
 # the bare encoder embeddings have no calibrated relationship to emotion.

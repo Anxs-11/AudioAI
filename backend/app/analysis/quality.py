@@ -46,27 +46,27 @@ def assess_quality(
     result = QualityAnalysisResult()
     penalties = 0
 
-    # ── Clipping (digital distortion) — phone codecs often cause micro-peaks ──
+    # Clipping (digital distortion) — phone codecs often cause micro-peaks
     if acoustic_feat.clipping_ratio > 0.03:
         result.issues.append("clipping detected")
         penalties += 2 if acoustic_feat.clipping_ratio > 0.08 else 1
 
-    # ── Very low volume ────────────────────────────────────────────────────
+    # Very low volume
     if acoustic_feat.rms_mean < 0.005:
         result.issues.append("very low volume")
         penalties += 1
 
-    # ── Muffled speech (extremely narrow bandwidth — below telephone standard 300-3400Hz) ──
+    # Muffled speech (extremely narrow bandwidth — below telephone standard 300-3400Hz)
     if acoustic_feat.spectral_bandwidth_mean > 0 and acoustic_feat.spectral_bandwidth_mean < 400:
         result.issues.append("muffled or narrow-band audio")
         penalties += 1
 
-    # ── Echo detection (autocorrelation peak) ──────────────────────────────
+    # Echo detection (autocorrelation peak)
     if _detect_echo(audio, sr):
         result.issues.append("echo or reverberation")
         penalties += 1
 
-    # ── Packet-loss gaps (short silent dropouts in speech) ─────────────────
+    # Packet-loss gaps (short silent dropouts in speech)
     gap_count = _detect_packet_loss(audio, sr)
     if gap_count > 3:
         result.issues.append(f"potential packet loss ({gap_count} gaps)")
@@ -75,12 +75,12 @@ def assess_quality(
         result.issues.append(f"minor packet loss ({gap_count} gaps)")
         penalties += 1
 
-    # ── Robotic / digital artifacts (unusual spectral flatness) ────────────
+    # Robotic / digital artifacts (unusual spectral flatness)
     if acoustic_feat.spectral_flatness_mean > 0.6:
         result.issues.append("robotic or synthetic audio artifacts")
         penalties += 1
 
-    # ── SNR check (using pre-computed estimate) ────────────────────────────
+    # SNR check (using pre-computed estimate)
     if hasattr(acoustic_feat, 'snr_db') and acoustic_feat.snr_db is not None:
         if acoustic_feat.snr_db < SNR_HIGH_NOISE_DB:
             result.issues.append(f"very low SNR ({acoustic_feat.snr_db:.0f} dB)")
@@ -89,7 +89,7 @@ def assess_quality(
             result.issues.append(f"low SNR ({acoustic_feat.snr_db:.0f} dB)")
             penalties += 1
 
-    # ── Map penalties to quality tier ──────────────────────────────────────
+    # Map penalties to quality tier
     if penalties >= 4:
         result.quality = AudioQuality.SEVERELY_IMPAIRED
     elif penalties >= 2:

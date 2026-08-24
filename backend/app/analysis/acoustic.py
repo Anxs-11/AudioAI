@@ -85,38 +85,38 @@ def extract_features(audio: np.ndarray, sr: int = SAMPLE_RATE) -> AcousticFeatur
     else:
         analysis_audio = audio
 
-    # ── RMS energy ─────────────────────────────────────────────────────────
+    # RMS energy
     rms = librosa.feature.rms(y=audio)[0]
     feat.rms_mean = float(np.mean(rms))
     feat.rms_std = float(np.std(rms))
     feat.rms_max = float(np.max(rms))
 
-    # ── Spectral features ──────────────────────────────────────────────────
+    # Spectral features
     feat.spectral_centroid_mean = float(np.mean(librosa.feature.spectral_centroid(y=analysis_audio, sr=sr)))
     feat.zcr_mean = float(np.mean(librosa.feature.zero_crossing_rate(analysis_audio)))
 
-    # ── MFCCs ──────────────────────────────────────────────────────────────
+    # MFCCs
     mfccs = librosa.feature.mfcc(y=analysis_audio, sr=sr, n_mfcc=13)
     feat.mfcc_means = [float(np.mean(mfccs[i])) for i in range(13)]
 
-    # ── Silence detection ──────────────────────────────────────────────────
+    # Silence detection
     feat.long_silence_detected, feat.max_silence_duration_sec = _detect_long_silence(
         rms, sr, hop_length=512,
     )
 
-    # ── Speaker overlap heuristic ──────────────────────────────────────────
+    # Speaker overlap heuristic
     feat.speaker_overlap_detected = _detect_overlap(rms)
 
-    # ── SNR estimation ─────────────────────────────────────────────────────
+    # SNR estimation
     feat.snr_db = _estimate_snr(audio, sr)
 
-    # ── Clipping detection ─────────────────────────────────────────────────
+    # Clipping detection
     feat.clipping_ratio = float(np.mean(np.abs(audio) > 0.99))
 
     return feat
 
 
-# ── Private helpers ────────────────────────────────────────────────────────────
+# Private helpers
 
 def _detect_long_silence(
     rms: np.ndarray,
