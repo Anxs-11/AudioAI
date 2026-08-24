@@ -81,4 +81,5 @@ class FileResultResponse(BaseModel):
     filename: str
     status: str
     result: Optional[AnalysisResult] = None
+    detail: Optional[dict] = None
     error: Optional[str] = None

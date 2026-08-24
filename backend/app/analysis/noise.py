@@ -39,6 +39,11 @@ def analyze_noise(
     """
     result = NoiseAnalysisResult()
 
+    # Normalize loudness so thresholds are gain-invariant
+    speech_rms = np.sqrt(np.mean(audio ** 2))
+    if speech_rms > 1e-6:
+        audio = audio * (0.05 / speech_rms)
+
     frame_length = int(0.025 * sr)
     hop = int(0.010 * sr)
 

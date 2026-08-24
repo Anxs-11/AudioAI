@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { FileResult, getAudioUrl, AnalysisResult } from "../api";
+import { FileResult, getAudioUrl, AnalysisResult, FileResultDetail } from "../api";
 
 interface Props {
   results: FileResult[];
@@ -197,8 +197,71 @@ export default function ResultsTable({ results, batchId }: Props) {
                   <StatCard label="Confidence" value={`${(r.confidence * 100).toFixed(0)}%`} color="text-blue-300" />
                 </div>
 
+                {/* Explainability: per-model scores */}
+                {fr.detail && (
+                  <div className="space-y-3">
+                    {fr.detail.audio_emotion && Object.keys(fr.detail.audio_emotion).length > 0 && (
+                      <ModelScoreBar label="Audio Model" scores={fr.detail.audio_emotion} />
+                    )}
+                    {fr.detail.text_emotion && Object.keys(fr.detail.text_emotion).length > 0 && (
+                      <ModelScoreBar label="Text Model" scores={fr.detail.text_emotion} />
+                    )}
+                    {fr.detail.quality_issues && fr.detail.quality_issues.length > 0 && (
+                      <div className="bg-[#0c111b] border border-white/[0.06] rounded-lg px-4 py-3">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Quality Issues</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {fr.detail.quality_issues.map((issue, i) => (
+                            <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">{issue}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {fr.detail.duration_sec != null && (
+                      <div className="flex gap-3 text-[11px] text-gray-500">
+                        <span>Duration: {fr.detail.duration_sec}s</span>
+                        {fr.detail.processing_time_sec != null && <span>Processed in: {fr.detail.processing_time_sec}s</span>}
+                        {fr.detail.language && <span>Language: {fr.detail.language}</span>}
+                        {fr.detail.num_speakers != null && <span>Speakers: {fr.detail.num_speakers}</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Transcript with speaker turns */}
+                {fr.detail?.speaker_turns && fr.detail.speaker_turns.length > 0 && (
+                  <div className="bg-[#0c111b] border border-white/[0.06] rounded-lg px-4 py-3 max-h-40 overflow-y-auto">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Transcript</p>
+                    <div className="space-y-1">
+                      {fr.detail.speaker_turns.map((turn, i) => {
+                        const spkColors = [
+                          "text-blue-400", "text-emerald-400", "text-amber-400",
+                          "text-purple-400", "text-rose-400", "text-cyan-400",
+                        ];
+                        const spkNum = parseInt(turn.speaker.replace(/\D/g, "") || "1", 10);
+                        const color = spkColors[(spkNum - 1) % spkColors.length];
+                        const label = `Speaker ${spkNum}`;
+                        return (
+                          <div key={i} className="text-xs leading-relaxed">
+                            <span className={`font-semibold ${color}`}>
+                              {label}
+                            </span>
+                            <span className="text-gray-600 ml-1">[{turn.start}s–{turn.end}s]</span>
+                            <span className="text-gray-300 ml-1.5">{turn.text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {fr.detail?.transcript && (!fr.detail.speaker_turns || fr.detail.speaker_turns.length === 0) && (
+                  <div className="bg-[#0c111b] border border-white/[0.06] rounded-lg px-4 py-3 max-h-40 overflow-y-auto">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Transcript</p>
+                    <p className="text-xs text-gray-300 leading-relaxed">{fr.detail.transcript}</p>
+                  </div>
+                )}
+
                 {/* Audio player */}
-                <div className="bg-white rounded-xl p-1">
+                <div className="bg-[#0f1623] rounded-xl p-1">
                   <audio
                     controls
                     className="w-full h-10"
@@ -312,6 +375,46 @@ function JsonBlock({ data }: { data: AnalysisResult }) {
         {colorizeJson(data)}
         <span style={{ color: jsonColors.punctuation }}>{"}"}</span>
       </pre>
+    </div>
+  );
+}
+
+const modelScoreColors: Record<string, string> = {
+  neutral: "#94a3b8", satisfied: "#34d399", frustrated: "#fb923c",
+  upset: "#f87171", distressed: "#f472b6",
+  anger: "#f87171", disgust: "#a78bfa", fear: "#fbbf24",
+  joy: "#34d399", sadness: "#60a5fa", surprise: "#c084fc",
+};
+
+function ModelScoreBar({ label, scores }: { label: string; scores: Record<string, number> }) {
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const top = sorted[0];
+  return (
+    <div className="bg-[#0c111b] border border-white/[0.06] rounded-lg px-4 py-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-semibold" style={{ color: modelScoreColors[top[0]] || "#94a3b8" }}>
+          {Math.round(top[1] * 100)}% {top[0]}
+        </span>
+      </div>
+      <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
+        {sorted.map(([name, val]) => (
+          <div
+            key={name}
+            title={`${name}: ${Math.round(val * 100)}%`}
+            className="h-full first:rounded-l-full last:rounded-r-full"
+            style={{ width: `${Math.max(val * 100, 2)}%`, backgroundColor: modelScoreColors[name] || "#64748b" }}
+          />
+        ))}
+      </div>
+      <div className="flex gap-3 mt-1.5">
+        {sorted.map(([name, val]) => (
+          <span key={name} className="text-[10px] text-gray-500">
+            <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{ backgroundColor: modelScoreColors[name] || "#64748b" }} />
+            {name} {Math.round(val * 100)}%
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

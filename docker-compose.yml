@@ -9,11 +9,12 @@ services:
       - ADMIN_USERNAME=autoace
       - ADMIN_PASSWORD=autoace2024
       - WHISPER_MODEL_SIZE=base
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/voice_analyzer.db
     volumes:
       - backend-uploads:/app/uploads
-      - backend-db:/app
+      - backend-db:/app/data
     ports:
-      - "8000:8000"
+      - "8001:8000"
     restart: unless-stopped
 
   frontend:

@@ -244,16 +244,16 @@ function ConfusionMatrix({ labels, matrix }: { labels: string[]; matrix: number[
       <table className="text-xs border-collapse mx-auto">
         <thead>
           <tr>
-            <th className="p-2 text-slate-500">Actual ↓ / Pred →</th>
+            <th className="p-2 text-gray-400">Actual ↓ / Pred →</th>
             {labels.map((l) => (
-              <th key={l} className="p-2 text-center font-medium text-slate-600 min-w-[70px]">{l}</th>
+              <th key={l} className="p-2 text-center font-medium text-gray-400 min-w-[70px]">{l}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {labels.map((rowLabel, ri) => (
             <tr key={rowLabel}>
-              <td className="p-2 font-medium text-slate-600 text-right">{rowLabel}</td>
+              <td className="p-2 font-medium text-gray-400 text-right">{rowLabel}</td>
               {matrix[ri].map((val, ci) => {
                 const intensity = val / maxVal;
                 const isDiag = ri === ci;
@@ -265,7 +265,7 @@ function ConfusionMatrix({ labels, matrix }: { labels: string[]; matrix: number[
                 return (
                   <td
                     key={ci}
-                    className="p-2 text-center font-mono border border-slate-100"
+                    className="p-2 text-center font-mono text-gray-200 border border-white/[0.06]"
                     style={{ backgroundColor: bg }}
                   >
                     {val}

@@ -13,6 +13,7 @@ import librosa
 
 from app.analysis.acoustic import AcousticFeatures
 from app.schemas import AudioQuality
+from app.config import SNR_HIGH_NOISE_DB, SNR_MEDIUM_NOISE_DB
 
 
 class QualityAnalysisResult:
@@ -78,6 +79,15 @@ def assess_quality(
     if acoustic_feat.spectral_flatness_mean > 0.6:
         result.issues.append("robotic or synthetic audio artifacts")
         penalties += 1
+
+    # ── SNR check (using pre-computed estimate) ────────────────────────────
+    if hasattr(acoustic_feat, 'snr_db') and acoustic_feat.snr_db is not None:
+        if acoustic_feat.snr_db < SNR_HIGH_NOISE_DB:
+            result.issues.append(f"very low SNR ({acoustic_feat.snr_db:.0f} dB)")
+            penalties += 2
+        elif acoustic_feat.snr_db < SNR_MEDIUM_NOISE_DB:
+            result.issues.append(f"low SNR ({acoustic_feat.snr_db:.0f} dB)")
+            penalties += 1
 
     # ── Map penalties to quality tier ──────────────────────────────────────
     if penalties >= 4:

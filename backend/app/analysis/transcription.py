@@ -62,7 +62,7 @@ def transcribe(audio: np.ndarray, sr: int = 16_000) -> TranscriptionResult:
 
     segments, info = model.transcribe(
         audio,
-        beam_size=5,
+        beam_size=1,
         word_timestamps=True,
         vad_filter=True,
     )

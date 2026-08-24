@@ -1,0 +1,102 @@
+{
+  "total_samples": 93,
+  "correct": 45,
+  "accuracy": 0.4839,
+  "per_class": [
+    {
+      "class": "neutral",
+      "precision": 0.389,
+      "recall": 0.519,
+      "f1": 0.444,
+      "support": 27
+    },
+    {
+      "class": "satisfied",
+      "precision": 0.375,
+      "recall": 0.6,
+      "f1": 0.462,
+      "support": 15
+    },
+    {
+      "class": "frustrated",
+      "precision": 1.0,
+      "recall": 0.227,
+      "f1": 0.37,
+      "support": 22
+    },
+    {
+      "class": "upset",
+      "precision": 0.542,
+      "recall": 0.867,
+      "f1": 0.667,
+      "support": 15
+    },
+    {
+      "class": "distressed",
+      "precision": 1.0,
+      "recall": 0.286,
+      "f1": 0.444,
+      "support": 14
+    }
+  ],
+  "confusion_matrix": {
+    "labels": [
+      "neutral",
+      "satisfied",
+      "frustrated",
+      "upset",
+      "distressed"
+    ],
+    "matrix": [
+      [
+        14,
+        9,
+        0,
+        4,
+        0
+      ],
+      [
+        6,
+        9,
+        0,
+        0,
+        0
+      ],
+      [
+        10,
+        4,
+        5,
+        3,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        13,
+        0
+      ],
+      [
+        4,
+        2,
+        0,
+        4,
+        4
+      ]
+    ]
+  },
+  "datasets": {
+    "ravdess": {
+      "samples": 60,
+      "accuracy": 0.4
+    },
+    "synthetic_calls": {
+      "samples": 30,
+      "accuracy": 0.6
+    },
+    "production_calls": {
+      "samples": 3,
+      "accuracy": 1.0
+    }
+  }
+}

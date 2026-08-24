@@ -43,6 +43,7 @@ class FileResult(Base):
     filename = Column(String(500), nullable=False)
     status = Column(String(20), default="pending")  # pending | processing | completed | failed
     result_json = Column(Text, nullable=True)        # JSON string of AnalysisResult
+    detail_json = Column(Text, nullable=True)        # per-model scores, transcript, quality issues
     error = Column(Text, nullable=True)
 
     batch = relationship("Batch", back_populates="results")

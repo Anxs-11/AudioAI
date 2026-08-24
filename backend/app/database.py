@@ -22,6 +22,13 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db():
-    """Create all tables on startup."""
+    """Create all tables on startup and add missing columns for schema upgrades."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add detail_json column if missing (schema upgrade from earlier version)
+        try:
+            await conn.execute(__import__("sqlalchemy").text(
+                "ALTER TABLE file_results ADD COLUMN detail_json TEXT"
+            ))
+        except Exception:
+            pass  # column already exists

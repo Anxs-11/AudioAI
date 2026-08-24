@@ -9,18 +9,19 @@ Sets up:
 """
 
 import logging
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.auth import hash_password
 from app.config import DEFAULT_PASSWORD, DEFAULT_USERNAME
 from app.database import async_session, init_db
-from app.models import User
+from app.models import Batch, User
 from app.routers import auth_router, batch_router
 
 logging.basicConfig(
@@ -28,6 +29,8 @@ logging.basicConfig(
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+MODELS_READY = threading.Event()
 
 
 @asynccontextmanager
@@ -46,16 +49,26 @@ async def lifespan(app: FastAPI):
             await db.commit()
             logger.info("Created default admin user: %s", DEFAULT_USERNAME)
 
+        # Recover batches stuck in "processing" from a previous crash
+        await db.execute(update(Batch).where(Batch.status == "processing").values(status="failed"))
+        await db.commit()
+
     logger.info("Voice Analyzer API ready.")
     # Pre-load ML models in background to avoid cold-start on first request
-    import threading
     def _warmup():
-        from app.analysis.emotion_model import _get_original_pipe, _get_finetuned_model
+        from app.analysis.emotion_model import _get_original_pipe, _get_finetuned_model, _get_dim_model
         from app.analysis.transcription import _get_model
+        from app.analysis.diarization import _get_speaker_encoder
         logger.info("Pre-loading ML models...")
         _get_model()
         _get_original_pipe()
         _get_finetuned_model()
+        try:
+            _get_dim_model()
+        except Exception as e:
+            logger.warning("Dimensional model failed to load (non-critical): %s", e)
+        _get_speaker_encoder()
+        MODELS_READY.set()
         logger.info("ML models loaded and ready.")
     threading.Thread(target=_warmup, daemon=True).start()
     yield
@@ -72,7 +85,11 @@ app = FastAPI(
 # ── CORS (allow frontend dev server) ──────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://audio-ai-wine.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,6 +98,11 @@ app.add_middleware(
 # ── Routers ────────────────────────────────────────────────────────────────────
 app.include_router(auth_router.router)
 app.include_router(batch_router.router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "models_loaded": MODELS_READY.is_set()}
 
 # ── Serve frontend static build (if it exists) ────────────────────────────────
 frontend_build = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"

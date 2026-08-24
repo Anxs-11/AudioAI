@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { downloadMemoPdf } from "../utils/generateMemoPdf";
 
 export default function Methodology() {
@@ -26,7 +27,7 @@ export default function Methodology() {
           <div className="mt-3 bg-[#0c111b] rounded-lg p-4 font-mono text-[11px] text-gray-400 leading-loose">
             Audio → Whisper (transcription) + Wav2Vec2 (4-class emotion + 5-class fine-tuned)<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ distilRoBERTa (text emotion) + librosa (acoustic features)<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Weighted Ensemble (0.45 audio, 0.25 text, 0.15 acoustic, 0.10 fine-tuned)<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Weighted Ensemble (0.55 audio, 0.25 text, 0.10 acoustic, 0.10 fine-tuned)<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Keyword Boosting → 9-field output
           </div>
           <p className="mt-3">
@@ -67,6 +68,9 @@ export default function Methodology() {
           </div>
 
         </Section>
+
+        {/* Cost Calculator */}
+        <CostCalculator />
 
         {/* Latency */}
         <Section title="3. Latency Per Clip">
@@ -188,5 +192,78 @@ function LatencyCard({ label, time, ratio }: { label: string; time: string; rati
       <p className="text-lg font-bold text-blue-300 tabular-nums">{time}</p>
       <p className="text-[11px] text-gray-500 mt-0.5">{ratio}</p>
     </div>
+  );
+}
+
+function CostCalculator() {
+  const [callsPerMonth, setCallsPerMonth] = useState(10000);
+  const avgMinutes = 3;
+  const totalMinutes = callsPerMonth * avgMinutes;
+
+  const awsCost = totalMinutes * 0.036;
+  const googleCost = totalMinutes * 0.024;
+  const autoAceCost = 40; // fixed server cost
+
+  const awsSavings = awsCost - autoAceCost;
+  const crossoverCalls = Math.ceil(autoAceCost / (avgMinutes * 0.036));
+
+  return (
+    <Section title="2b. Cost Calculator — AutoAce vs. Cloud">
+      <p className="text-xs text-gray-400 mb-4">
+        Drag the slider to compare monthly costs. AutoAce runs on a fixed-cost CPU server; cloud providers charge per minute.
+      </p>
+
+      <div className="mb-5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-gray-500">Calls per month</span>
+          <span className="text-sm font-bold text-gray-200 tabular-nums">{callsPerMonth.toLocaleString()}</span>
+        </div>
+        <input
+          type="range"
+          min={100}
+          max={100000}
+          step={100}
+          value={callsPerMonth}
+          onChange={(e) => setCallsPerMonth(Number(e.target.value))}
+          className="w-full accent-[#2a78d6] h-2 rounded-lg appearance-none bg-white/10"
+        />
+        <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+          <span>100</span>
+          <span>100,000</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 text-center">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">AutoAce</p>
+          <p className="text-xl font-bold text-emerald-300 tabular-nums">${autoAceCost}/mo</p>
+          <p className="text-[10px] text-gray-500 mt-1">Fixed (CPU server)</p>
+        </div>
+        <div className="bg-[#0c111b] border border-white/[0.06] rounded-lg p-4 text-center">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">AWS Transcribe + Comprehend</p>
+          <p className="text-xl font-bold text-red-300 tabular-nums">${awsCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo</p>
+          <p className="text-[10px] text-gray-500 mt-1">${(0.036).toFixed(3)}/min</p>
+        </div>
+        <div className="bg-[#0c111b] border border-white/[0.06] rounded-lg p-4 text-center">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Google CCAI</p>
+          <p className="text-xl font-bold text-amber-300 tabular-nums">${googleCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo</p>
+          <p className="text-[10px] text-gray-500 mt-1">${(0.024).toFixed(3)}/min</p>
+        </div>
+      </div>
+
+      {awsSavings > 0 && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-center">
+          <p className="text-xs text-emerald-300 font-semibold">
+            AutoAce saves ${awsSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo vs AWS
+            <span className="text-emerald-400/70 ml-1">({Math.round((awsSavings / awsCost) * 100)}% reduction)</span>
+          </p>
+        </div>
+      )}
+
+      <p className="text-[11px] text-gray-500 mt-3">
+        Break-even: AutoAce becomes cheaper than AWS at just {crossoverCalls.toLocaleString()} calls/month.
+        Audio never leaves your server — no data transfer costs, full HIPAA/GDPR compliance.
+      </p>
+    </Section>
   );
 }

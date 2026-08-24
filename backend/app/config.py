@@ -16,6 +16,10 @@ SECRET_KEY = os.getenv("SECRET_KEY", "autoace-dev-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "480"))
 
+# Fail fast if running in production with the dev default secret
+if os.getenv("RAILWAY_ENVIRONMENT") and SECRET_KEY.startswith("autoace-dev"):
+    raise RuntimeError("SECRET_KEY must be set to a secure value in production")
+
 # ── Database ───────────────────────────────────────────────────────────────────
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -33,6 +37,7 @@ SAMPLE_RATE = 16_000  # all audio is resampled to 16 kHz mono
 # ── Model identifiers (HuggingFace) ───────────────────────────────────────────
 AUDIO_EMOTION_MODEL = "superb/wav2vec2-base-superb-er"
 TEXT_EMOTION_MODEL = "j-hartmann/emotion-english-distilroberta-base"
+DIMENSIONAL_EMOTION_MODEL = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 
 # ── Thresholds (tunable with labeled data) ─────────────────────────────────────
 LONG_SILENCE_THRESHOLD_SEC = 5.0   # pauses longer than this → long_silence_present

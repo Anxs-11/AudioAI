@@ -11,6 +11,7 @@ import {
 } from "../api";
 import ProgressBar from "../components/ProgressBar";
 import ResultsTable from "../components/ResultsTable";
+import MetricsPanel from "../components/MetricsPanel";
 
 export default function Results() {
   const { batchId } = useParams<{ batchId: string }>();
@@ -26,10 +27,15 @@ export default function Results() {
     if (!id) return;
 
     let active = true;
+    let retries = 0;
     const poll = async () => {
       try {
         const s = await getBatchStatus(id);
-        if (active) setStatus(s);
+        if (active) {
+          setStatus(s);
+          setError("");
+          retries = 0;
+        }
 
         if (s.status === "completed" || s.status === "failed") {
           const [r, m] = await Promise.all([getBatchResults(id), getBatchMetrics(id)]);
@@ -41,7 +47,12 @@ export default function Results() {
           setTimeout(poll, 2000);
         }
       } catch {
-        if (active) setError("Failed to fetch batch status");
+        retries++;
+        if (retries < 10 && active) {
+          setTimeout(poll, Math.min(2000 * Math.pow(1.5, retries), 15000));
+        } else if (active) {
+          setError("Failed to fetch batch status");
+        }
       }
     };
     poll();
@@ -163,6 +174,10 @@ export default function Results() {
           {/* File results */}
           {results.length > 0 && (
             <ResultsTable results={results} batchId={id} />
+          )}
+
+          {metrics && metrics.total_completed > 0 && (
+            <MetricsPanel metrics={metrics} />
           )}
         </>
       )}

@@ -63,12 +63,22 @@ async def upload_batch(
 
     zip_path = batch_dir / "upload.zip"
     content = await file.read()
+
+    MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="Upload exceeds 200 MB limit")
+
     zip_path.write_bytes(content)
 
     # Extract ZIP
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
-            # Security: prevent path traversal
+            # Security: prevent path traversal and zip bombs
+            total_uncompressed = sum(i.file_size for i in zf.infolist())
+            if total_uncompressed > 500 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="ZIP contents exceed 500 MB uncompressed limit")
+            if len(zf.infolist()) > 500:
+                raise HTTPException(status_code=400, detail="ZIP contains too many files (max 500)")
             for member in zf.namelist():
                 if member.startswith("/") or ".." in member:
                     raise HTTPException(status_code=400, detail=f"Invalid path in ZIP: {member}")
@@ -153,6 +163,67 @@ async def upload_files(
     }
 
 
+# ── Single-file instant analysis (for live mic demo) ──────────────────────────
+
+@router.post("/analyze-now")
+async def analyze_now(
+    file: UploadFile,
+    user: User = Depends(get_current_user),
+):
+    """Analyze a single audio file synchronously and return the result immediately."""
+    import asyncio
+    import subprocess
+
+    from app.main import MODELS_READY
+    if not MODELS_READY.is_set():
+        raise HTTPException(status_code=503, detail="Models are still loading, please wait")
+    import tempfile
+    import time
+
+    suffix = Path(file.filename or "clip.webm").suffix or ".webm"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        if len(content) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    # Convert non-WAV formats (e.g. webm from browser mic) to WAV via ffmpeg
+    wav_path = tmp_path
+    if suffix.lower() != ".wav":
+        wav_path = tmp_path.rsplit(".", 1)[0] + ".wav"
+        try:
+            import imageio_ffmpeg
+            ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        except ImportError:
+            ffmpeg_exe = "ffmpeg"
+        try:
+            subprocess.run(
+                [ffmpeg_exe, "-y", "-i", tmp_path, "-ar", "16000", "-ac", "1", wav_path],
+                capture_output=True, timeout=30, check=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            Path(tmp_path).unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail=f"Audio conversion failed: {e}")
+
+    t0 = time.time()
+    try:
+        result, detail = await asyncio.to_thread(analyze_audio_file, wav_path)
+    except Exception as e:
+        logger.error("analyze-now failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+        if wav_path != tmp_path:
+            Path(wav_path).unlink(missing_ok=True)
+
+    return {
+        "result": json.loads(result.model_dump_json()),
+        "detail": detail,
+        "processing_time_sec": round(time.time() - t0, 1),
+    }
+
+
 # ── Run processing ─────────────────────────────────────────────────────────────
 
 @router.post("/{batch_id}/run")
@@ -212,6 +283,7 @@ async def get_batch_results(
             filename=fr.filename,
             status=fr.status,
             result=json.loads(fr.result_json) if fr.result_json else None,
+            detail=json.loads(fr.detail_json) if fr.detail_json else None,
             error=fr.error,
         )
         for fr in file_results
@@ -490,18 +562,38 @@ async def _process_batch(batch_id: int):
 
         batch_dir = UPLOAD_DIR / str(batch_id) / "files"
 
-        for fr in file_results:
+        sem = asyncio.Semaphore(2)
+
+        async def _process_file(fr):
+            await sem.acquire()
             fr.status = "processing"
             await db.commit()
 
+            converted_path = None
             try:
                 file_path = _find_file(batch_dir, fr.filename)
                 if file_path is None:
                     raise FileNotFoundError(f"File not found: {fr.filename}")
 
-                # Run CPU-heavy analysis in thread pool to avoid blocking the event loop
-                analysis = await asyncio.to_thread(analyze_audio_file, file_path)
+                # Convert non-WAV formats to WAV via ffmpeg so librosa can load them
+                actual_path = str(file_path)
+                if file_path.suffix.lower() in (".webm", ".m4a", ".aac", ".mp4", ".mpeg", ".wma"):
+                    import subprocess
+                    converted_path = file_path.with_suffix(".wav")
+                    try:
+                        import imageio_ffmpeg
+                        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+                    except ImportError:
+                        ffmpeg_exe = "ffmpeg"
+                    subprocess.run(
+                        [ffmpeg_exe, "-y", "-i", str(file_path), "-ar", "16000", "-ac", "1", str(converted_path)],
+                        capture_output=True, timeout=60, check=True,
+                    )
+                    actual_path = str(converted_path)
+
+                analysis, detail = await asyncio.to_thread(analyze_audio_file, actual_path)
                 fr.result_json = analysis.model_dump_json()
+                fr.detail_json = json.dumps(detail)
                 fr.status = "completed"
                 batch.processed_files += 1
 
@@ -510,8 +602,14 @@ async def _process_batch(batch_id: int):
                 fr.status = "failed"
                 fr.error = str(e)
                 batch.failed_files += 1
+            finally:
+                if converted_path and converted_path.exists():
+                    converted_path.unlink(missing_ok=True)
+                sem.release()
 
             await db.commit()
+
+        await asyncio.gather(*[_process_file(fr) for fr in file_results])
 
         # Mark batch as completed
         batch.status = "completed"

@@ -103,10 +103,26 @@ export interface AnalysisResult {
   confidence: number;
 }
 
+export interface FileResultDetail {
+  transcript?: string;
+  language?: string;
+  duration_sec?: number;
+  processing_time_sec?: number;
+  audio_emotion?: Record<string, number>;
+  text_emotion?: Record<string, number>;
+  acoustic_emotion?: Record<string, number>;
+  quality_issues?: string[];
+  snr_db?: number | null;
+  speaking_rate_wpm?: number;
+  num_speakers?: number;
+  speaker_turns?: { speaker: string; start: number; end: number; text: string }[];
+}
+
 export interface FileResult {
   filename: string;
   status: string;
   result: AnalysisResult | null;
+  detail: FileResultDetail | null;
   error: string | null;
 }
 
@@ -155,6 +171,19 @@ export interface BatchMetrics {
 
 export async function getBatchMetrics(batchId: number): Promise<BatchMetrics> {
   const res = await api.get(`/batch/${batchId}/metrics`);
+  return res.data;
+}
+
+export interface AnalyzeNowResponse {
+  result: AnalysisResult;
+  detail: Record<string, unknown>;
+  processing_time_sec: number;
+}
+
+export async function analyzeNow(file: File): Promise<AnalyzeNowResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await api.post("/batch/analyze-now", form);
   return res.data;
 }
 

@@ -2,10 +2,11 @@
 Ensemble module: combines predictions from all analysis pipelines into
 a single AnalysisResult matching the required output schema.
 
-Three independent signals are fused:
-  1. Audio emotion model  (wav2vec2 SER)  → weight 0.50
-  2. Text emotion model   (distilRoBERTa) → weight 0.30
-  3. Acoustic features    (pitch/energy)  → weight 0.20
+Four independent signals are fused:
+  1. Audio emotion model  (wav2vec2 SER)         → weight 0.55
+  2. Acoustic classifier  (MFCC/pitch/energy)    → weight 0.10
+  3. Text emotion model   (distilRoBERTa)        → weight 0.25
+  4. Acoustic features    (pitch/energy nudge)    → weight 0.10
 
 The ensemble uses weighted voting for emotional_tone and derives
 emotional_intensity from model confidence + acoustic energy/pitch metrics.
@@ -41,6 +42,9 @@ AUDIO_LABEL_MAP: dict[str, EmotionalTone] = {
     "sad":       EmotionalTone.FRUSTRATED,
 }
 
+# sad maps to both frustrated and distressed so distressed can win
+SAD_SPLIT = {EmotionalTone.FRUSTRATED: 0.5, EmotionalTone.DISTRESSED: 0.5}
+
 TEXT_LABEL_MAP: dict[str, EmotionalTone] = {
     "anger":    EmotionalTone.UPSET,
     "disgust":  EmotionalTone.FRUSTRATED,
@@ -52,10 +56,19 @@ TEXT_LABEL_MAP: dict[str, EmotionalTone] = {
 }
 
 # Fine-tuned audio model is now primary; text confirms; acoustics break ties
-W_AUDIO = 0.55
-W_ACOUSTIC_CLF = 0.10
-W_TEXT = 0.25
-W_ACOUSTIC = 0.15
+W_AUDIO = 0.45
+W_ACOUSTIC_CLF = 0.08
+W_TEXT = 0.22
+W_ACOUSTIC = 0.10
+W_DIM = 0.15
+
+ACOUSTIC_CLF_LABEL_MAP: dict[str, EmotionalTone] = {
+    "upset": EmotionalTone.UPSET,
+    "satisfied": EmotionalTone.SATISFIED,
+    "neutral": EmotionalTone.NEUTRAL,
+    "frustrated": EmotionalTone.FRUSTRATED,
+    "distressed": EmotionalTone.DISTRESSED,
+}
 
 
 def build_result(
@@ -67,6 +80,7 @@ def build_result(
     quality_result: QualityAnalysisResult,
     transcript: TranscriptionResult,
     customer_text: str = "",
+    dim_emotion: EmotionPrediction | None = None,
 ) -> AnalysisResult:
     """
     Fuse all pipeline outputs into a single AnalysisResult.
@@ -91,34 +105,35 @@ def build_result(
     is_non_english = transcript.language and transcript.language != "en"
 
     for raw_label, score in audio_emotion.all_scores.items():
-        mapped = AUDIO_LABEL_MAP.get(raw_label, EmotionalTone.NEUTRAL)
         weight = W_AUDIO
         if audio_is_uncertain:
             weight = W_AUDIO * 0.7
         if is_non_english:
             weight *= 0.4
-        votes[mapped] += score * weight
+        # Split 'sad' votes between frustrated and distressed
+        if raw_label == "sad" and raw_label in AUDIO_LABEL_MAP:
+            for tone, frac in SAD_SPLIT.items():
+                votes[tone] += score * frac * weight
+        else:
+            mapped = AUDIO_LABEL_MAP.get(raw_label, EmotionalTone.NEUTRAL)
+            votes[mapped] += score * weight
 
     # Only bias toward neutral for non-English (no transcript to verify)
     if is_non_english:
         votes[EmotionalTone.NEUTRAL] += W_AUDIO * 0.15
 
     # ── Acoustic classifier votes (trained on MFCC/pitch/energy features) ──
-    # Use as tiebreaker when the audio model isn't confident
-    ACOUSTIC_CLF_LABEL_MAP = {
-        "upset": EmotionalTone.UPSET,
-        "satisfied": EmotionalTone.SATISFIED,
-        "neutral": EmotionalTone.NEUTRAL,
-        "frustrated": EmotionalTone.FRUSTRATED,
-        "distressed": EmotionalTone.DISTRESSED,
-    }
-    clf_weight = W_ACOUSTIC_CLF if audio_is_uncertain else W_ACOUSTIC_CLF * 0.5
-    for label, score in acoustic_emotion.all_scores.items():
-        mapped = ACOUSTIC_CLF_LABEL_MAP.get(label, EmotionalTone.NEUTRAL)
-        votes[mapped] += score * clf_weight
+    # Skip vote entirely when the classifier model is unavailable (empty all_scores)
+    if acoustic_emotion.all_scores:
+        clf_weight = W_ACOUSTIC_CLF if audio_is_uncertain else W_ACOUSTIC_CLF * 0.5
+        for label, score in acoustic_emotion.all_scores.items():
+            mapped = ACOUSTIC_CLF_LABEL_MAP.get(label, EmotionalTone.NEUTRAL)
+            votes[mapped] += score * clf_weight
 
-    # Text model votes — reduce weight if not English
-    text_weight = W_TEXT
+    # Text model votes — scale weight by salience (neutral text should abstain)
+    text_neutral_prob = text_emotion.all_scores.get("neutral", 0.0)
+    text_salience = 1.0 - text_neutral_prob
+    text_weight = W_TEXT * (0.3 + 0.7 * text_salience)
     if is_non_english:
         text_weight = W_TEXT * 0.2
 
@@ -133,6 +148,15 @@ def build_result(
     # Acoustic-feature nudge based on pitch and energy variance
     acoustic_tone = _acoustic_emotion_hint(acoustic_feat)
     votes[acoustic_tone] += W_ACOUSTIC
+
+    # ── Dimensional model votes (arousal/valence → 5-class) ────────────────
+    if dim_emotion and dim_emotion.all_scores:
+        DIM_MAP = {"neutral": EmotionalTone.NEUTRAL, "satisfied": EmotionalTone.SATISFIED,
+                    "frustrated": EmotionalTone.FRUSTRATED, "upset": EmotionalTone.UPSET,
+                    "distressed": EmotionalTone.DISTRESSED}
+        for label, score in dim_emotion.all_scores.items():
+            mapped = DIM_MAP.get(label, EmotionalTone.NEUTRAL)
+            votes[mapped] += score * W_DIM
 
     # ── Step 2b: Transcript keyword boosting ───────────────────────────────
     # Use customer text for keyword analysis (not full transcript with agent)
