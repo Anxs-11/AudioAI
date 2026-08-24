@@ -5,6 +5,7 @@ import {
   getBatchResults,
   getBatchMetrics,
   cancelBatch,
+  runBatch,
   BatchStatus,
   BatchMetrics,
   FileResult,
@@ -38,7 +39,7 @@ export default function Results() {
           retries = 0;
         }
 
-        if (s.status === "completed" || s.status === "failed") {
+        if (s.status === "completed" || s.status === "failed" || s.status === "cancelled") {
           const [r, m] = await Promise.all([getBatchResults(id), getBatchMetrics(id)]);
           if (active) {
             setResults(r);
@@ -73,7 +74,7 @@ export default function Results() {
       )}
 
       {/* Loading / Processing state */}
-      {(!status || (status.status !== "completed" && status.status !== "failed")) && !error && (
+      {(!status || (status.status !== "completed" && status.status !== "failed" && status.status !== "cancelled")) && !error && (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="relative w-24 h-24 mb-6">
             <div className="absolute inset-0 rounded-full border-4 border-white/10" />
@@ -111,6 +112,38 @@ export default function Results() {
           >
             Cancel &amp; go back
           </button>
+        </div>
+      )}
+
+      {/* Cancelled view */}
+      {status && status.status === "cancelled" && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-16 h-16 rounded-full bg-yellow-900/30 flex items-center justify-center mb-6">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-100 mb-2">Batch Cancelled</h3>
+          <p className="text-sm text-gray-400 mb-6">
+            {status.processed_files} of {status.total_files} files were processed before cancellation.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={async () => {
+                try {
+                  await runBatch(Number(batchId));
+                  setStatus({ ...status, status: "processing" });
+                } catch {}
+              }}
+              className="px-5 py-2 rounded-lg text-sm font-medium bg-[#2a78d6] text-white hover:bg-[#3a88e6] transition"
+            >
+              Reprocess
+            </button>
+            <button
+              onClick={() => navigate("/history")}
+              className="px-5 py-2 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition"
+            >
+              Go back
+            </button>
+          </div>
         </div>
       )}
 

@@ -56,17 +56,13 @@ async def lifespan(app: FastAPI):
     logger.info("Voice Analyzer API ready.")
     # Pre-load ML models in background to avoid cold-start on first request
     def _warmup():
-        from app.analysis.emotion_model import _get_original_pipe, _get_finetuned_model, _get_dim_model
+        from app.analysis.emotion_model import _get_original_pipe, _get_finetuned_model
         from app.analysis.transcription import _get_model
         from app.analysis.diarization import _get_speaker_encoder
         logger.info("Pre-loading ML models...")
         _get_model()
         _get_original_pipe()
         _get_finetuned_model()
-        try:
-            _get_dim_model()
-        except Exception as e:
-            logger.warning("Dimensional model failed to load (non-critical): %s", e)
         _get_speaker_encoder()
         MODELS_READY.set()
         logger.info("ML models loaded and ready.")
@@ -82,7 +78,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── CORS (allow frontend dev server) ──────────────────────────────────────────
+# CORS (allow frontend dev server)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -95,7 +91,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ────────────────────────────────────────────────────────────────────
+# Routers
 app.include_router(auth_router.router)
 app.include_router(batch_router.router)
 
@@ -104,7 +100,7 @@ app.include_router(batch_router.router)
 async def health():
     return {"status": "ok", "models_loaded": MODELS_READY.is_set()}
 
-# ── Serve frontend static build (if it exists) ────────────────────────────────
+# Serve frontend static build (if it exists)
 frontend_build = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 if frontend_build.is_dir():
     app.mount("/", StaticFiles(directory=str(frontend_build), html=True), name="frontend")
