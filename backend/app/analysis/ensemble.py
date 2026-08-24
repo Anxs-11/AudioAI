@@ -56,11 +56,11 @@ TEXT_LABEL_MAP: dict[str, EmotionalTone] = {
 }
 
 # Fine-tuned audio model is now primary; text confirms; acoustics break ties
-W_AUDIO = 0.45
-W_ACOUSTIC_CLF = 0.08
-W_TEXT = 0.22
+W_AUDIO = 0.50
+W_ACOUSTIC_CLF = 0.10
+W_TEXT = 0.25
 W_ACOUSTIC = 0.10
-W_DIM = 0.15
+W_DIM = 0.00
 
 ACOUSTIC_CLF_LABEL_MAP: dict[str, EmotionalTone] = {
     "upset": EmotionalTone.UPSET,

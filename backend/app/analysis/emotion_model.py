@@ -280,94 +280,12 @@ def classify_acoustic_emotion(acoustic_feat) -> EmotionPrediction:
     )
 
 
-# ── Dimensional emotion model (arousal/valence/dominance → 5-class) ───────────
-
-_dim_model = None
-_dim_processor = None
-
-
-def _get_dim_model():
-    global _dim_model, _dim_processor
-    if _dim_model is None:
-        import torch
-        from transformers import Wav2Vec2Processor, Wav2Vec2Model
-        from app.config import DIMENSIONAL_EMOTION_MODEL
-
-        logger.info("Loading dimensional emotion model: %s", DIMENSIONAL_EMOTION_MODEL)
-        _dim_processor = Wav2Vec2Processor.from_pretrained(DIMENSIONAL_EMOTION_MODEL)
-        _dim_model = Wav2Vec2Model.from_pretrained(DIMENSIONAL_EMOTION_MODEL)
-        _dim_model = torch.quantization.quantize_dynamic(
-            _dim_model, {torch.nn.Linear}, dtype=torch.qint8
-        )
-        _dim_model.eval()
-        logger.info("Dimensional emotion model loaded.")
-    return _dim_model, _dim_processor
-
+# ── Dimensional emotion model — DISABLED ──────────────────────────────────────
+# The audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim model requires a
+# custom RegressionHead that outputs [arousal, dominance, valence]. Without it
+# the bare encoder embeddings have no calibrated relationship to emotion.
+# Disabled (W_DIM=0) until the head can be properly integrated.
 
 def classify_dimensional_emotion(audio: np.ndarray, sr: int = 16_000) -> EmotionPrediction:
-    """
-    Predict arousal/valence/dominance from audio, then map to 5-class emotions.
-    Model: audeering wav2vec2-large trained on MSP-Podcast (real spontaneous speech).
-    """
-    import torch
-
-    try:
-        model, processor = _get_dim_model()
-    except Exception as e:
-        logger.warning("Dimensional model unavailable: %s", e)
-        return EmotionPrediction(label="neutral", score=0.5, all_scores={"neutral": 1.0})
-
-    # Truncate to 30s max to keep inference fast
-    max_samples = sr * 30
-    seg = audio[:max_samples] if len(audio) > max_samples else audio
-
-    inputs = processor(seg, sampling_rate=sr, return_tensors="pt", padding=True)
-    with torch.no_grad():
-        out = model(inputs.input_values)
-        # The model's pooled output contains [arousal, dominance, valence]
-        hidden = out.last_hidden_state.mean(dim=1).squeeze()
-
-    # The audeering model outputs 3 regression values in the last hidden layer
-    # We use the mean-pooled representation and map to emotions via thresholds
-    # Arousal: 0=calm, 1=excited; Valence: 0=negative, 1=positive; Dominance: 0=submissive, 1=dominant
-    # For this model, we approximate from the embedding statistics
-    emb = hidden.numpy()
-
-    # Use embedding norm and distribution as proxy for arousal/valence
-    emb_norm = float(np.linalg.norm(emb))
-    emb_mean = float(np.mean(emb))
-    emb_std = float(np.std(emb))
-
-    # Map to emotion scores using learned heuristics
-    scores = {
-        "neutral": 0.2,
-        "satisfied": 0.15,
-        "frustrated": 0.15,
-        "upset": 0.15,
-        "distressed": 0.15,
-    }
-
-    # High std + high norm → emotionally aroused
-    arousal = min(emb_std / 0.5, 1.0)
-    # Positive mean → positive valence
-    valence = 0.5 + emb_mean * 2.0
-    valence = max(0.0, min(1.0, valence))
-
-    if valence > 0.6:
-        scores["satisfied"] += 0.4 * valence
-        scores["neutral"] += 0.2 * (1.0 - arousal)
-    elif valence < 0.4:
-        if arousal > 0.6:
-            scores["upset"] += 0.35 * arousal
-            scores["distressed"] += 0.25 * arousal
-        else:
-            scores["frustrated"] += 0.35 * (1.0 - valence)
-            scores["distressed"] += 0.15
-    else:
-        scores["neutral"] += 0.3
-
-    total = sum(scores.values())
-    scores = {k: v / total for k, v in scores.items()}
-
-    top = max(scores, key=lambda k: scores[k])
-    return EmotionPrediction(label=top, score=float(scores[top]), all_scores=scores)
+    """Placeholder — dimensional stream disabled."""
+    return EmotionPrediction(label="neutral", score=0.5, all_scores={})

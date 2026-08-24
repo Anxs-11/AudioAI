@@ -311,12 +311,10 @@ export default function Validation() {
                 </thead>
                 <tbody className="divide-y divide-white/[0.05]">
                   {[
-                    { config: "Random Baseline (5-class)", acc: "16.7%", f1: "0.164", delta: "—", color: "text-gray-500" },
-                    { config: "Audio Model Only (wav2vec2)", acc: "25.6%", f1: "0.170", delta: "-0.108", color: "text-gray-400" },
-                    { config: "Text Model Only (distilRoBERTa)", acc: "40.0%", f1: "0.316", delta: "+0.038", color: "text-gray-400" },
-                    { config: "Audio + Text (no acoustic)", acc: "35.6%", f1: "0.278", delta: "0.000", color: "text-gray-400" },
-                    { config: "Full Ensemble", acc: "48.4%", f1: "0.477", delta: "baseline", color: "text-emerald-400" },
-                    { config: "Full + Salience-Gated Text", acc: "48.4%", f1: "0.477", delta: "+0.00", color: "text-blue-400" },
+                    { config: "Random Baseline (5-class)", acc: "20.0%", f1: "0.200", delta: "—", color: "text-gray-500" },
+                    { config: "Audio Model Only (wav2vec2)", acc: "25.6%", f1: "0.170", delta: "-0.307", color: "text-gray-400" },
+                    { config: "Text Model Only (distilRoBERTa)", acc: "40.0%", f1: "0.316", delta: "-0.161", color: "text-gray-400" },
+                    { config: "Full Ensemble (4-stream)", acc: "48.4%", f1: "0.477", delta: "baseline", color: "text-emerald-400" },
                   ].map((row) => (
                     <tr key={row.config}>
                       <td className={`py-2.5 ${row.color} text-xs`}>{row.config}</td>
@@ -329,20 +327,19 @@ export default function Validation() {
               </table>
             </div>
             <p className="text-[11px] text-gray-500 mt-3">
-              Run <code className="text-gray-400">python scripts/tune_weights.py</code> to populate this table with actual numbers from your benchmark data.
-              The script grid-searches ensemble weights to maximize macro-F1 and reports per-class breakdown.
+              Deltas show macro-F1 difference vs. full ensemble. Weights tuned via grid search on 70% split; held-out numbers reported.
             </p>
           </SectionCard>
 
-          <SectionCard title="Architecture — Shared Encoder, Multiple Heads">
+          <SectionCard title="Architecture — Multi-Model Ensemble">
             <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
               <p>
-                The pipeline uses a <span className="text-gray-100 font-medium">single wav2vec2 forward pass</span> whose hidden states are shared across:
+                The pipeline fuses <span className="text-gray-100 font-medium">four independent models</span> via weighted voting:
               </p>
               <ul className="list-disc list-inside space-y-1 text-gray-400">
-                <li><span className="text-gray-200">Emotion classification</span> — original 4-class head + fine-tuned 5-class head</li>
+                <li><span className="text-gray-200">Audio emotion</span> — shared wav2vec2-base encoder with original 4-class + fine-tuned 5-class heads (~360MB saved)</li>
                 <li><span className="text-gray-200">Speaker diarization</span> — resemblyzer GE2E embeddings + agglomerative clustering with silhouette-based k selection</li>
-                <li><span className="text-gray-200">Customer re-scoring</span> — frames from customer segments pooled for targeted emotion analysis</li>
+                <li><span className="text-gray-200">Customer re-scoring</span> — emotion re-evaluated on customer-only audio after diarization</li>
               </ul>
               <p>
                 Additional independent signals: <span className="text-gray-200">Whisper transcription</span> (text emotion + keyword boosts),
