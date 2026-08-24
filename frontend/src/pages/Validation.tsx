@@ -314,7 +314,7 @@ export default function Validation() {
                     { config: "Random Baseline (5-class)", acc: "20.0%", f1: "0.200", delta: "—", color: "text-gray-500" },
                     { config: "Audio Model Only (wav2vec2)", acc: "25.6%", f1: "0.170", delta: "-0.307", color: "text-gray-400" },
                     { config: "Text Model Only (distilRoBERTa)", acc: "40.0%", f1: "0.316", delta: "-0.161", color: "text-gray-400" },
-                    { config: "Full Ensemble (4-stream)", acc: "48.4%", f1: "0.477", delta: "baseline", color: "text-emerald-400" },
+                    { config: "Full Ensemble (4-stream)", acc: "49.5%", f1: "0.476", delta: "baseline", color: "text-emerald-400" },
                   ].map((row) => (
                     <tr key={row.config}>
                       <td className={`py-2.5 ${row.color} text-xs`}>{row.config}</td>

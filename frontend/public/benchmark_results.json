@@ -1,41 +1,41 @@
 {
   "total_samples": 93,
-  "correct": 45,
-  "accuracy": 0.4839,
+  "correct": 46,
+  "accuracy": 0.4946,
   "per_class": [
     {
       "class": "neutral",
-      "precision": 0.389,
-      "recall": 0.519,
-      "f1": 0.444,
+      "precision": 0.464,
+      "recall": 0.481,
+      "f1": 0.473,
       "support": 27
     },
     {
       "class": "satisfied",
-      "precision": 0.375,
-      "recall": 0.6,
-      "f1": 0.462,
+      "precision": 0.367,
+      "recall": 0.733,
+      "f1": 0.489,
       "support": 15
     },
     {
       "class": "frustrated",
       "precision": 1.0,
-      "recall": 0.227,
-      "f1": 0.37,
+      "recall": 0.273,
+      "f1": 0.429,
       "support": 22
     },
     {
       "class": "upset",
-      "precision": 0.542,
+      "precision": 0.5,
       "recall": 0.867,
-      "f1": 0.667,
+      "f1": 0.634,
       "support": 15
     },
     {
       "class": "distressed",
       "precision": 1.0,
-      "recall": 0.286,
-      "f1": 0.444,
+      "recall": 0.214,
+      "f1": 0.353,
       "support": 14
     }
   ],
@@ -49,46 +49,46 @@
     ],
     "matrix": [
       [
-        14,
-        9,
-        0,
-        4,
-        0
-      ],
-      [
-        6,
-        9,
-        0,
-        0,
-        0
-      ],
-      [
+        13,
         10,
+        0,
         4,
-        5,
-        3,
         0
       ],
       [
-        2,
+        4,
+        11,
         0,
+        0,
+        0
+      ],
+      [
+        8,
+        4,
+        6,
+        4,
+        0
+      ],
+      [
+        1,
+        1,
         0,
         13,
         0
       ],
       [
-        4,
         2,
-        0,
         4,
-        4
+        0,
+        5,
+        3
       ]
     ]
   },
   "datasets": {
     "ravdess": {
       "samples": 60,
-      "accuracy": 0.4
+      "accuracy": 0.4167
     },
     "synthetic_calls": {
       "samples": 30,
