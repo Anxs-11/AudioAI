@@ -76,9 +76,12 @@ Each audio file produces:
 
 | Metric | Value |
 |--------|-------|
+| Tone accuracy (overall, 93 samples) | 49.5% |
+| Tone accuracy (synthetic calls) | 60.0% (30 samples) |
 | Tone accuracy (production calls) | 100% (3/3) |
-| Overall field accuracy | 87.5% (21/24) |
-| Non-emotion field accuracy | 99% (367/372 on 93 samples) |
+| Speaker count detection | 100% (5/5 synthetic 2-speaker calls) |
+| Speaker word-level attribution | 66.0% |
+| Non-emotion field accuracy | 99% (372 evaluations) |
 | Processing speed | ~0.5× realtime (optimized) |
 | Inference cost | $0.000/min (all local) |
 
@@ -92,7 +95,7 @@ backend/
       pipeline.py        # Main orchestrator
       emotion_model.py   # Wav2Vec2 + fine-tuned 5-class classifier
       transcription.py   # Whisper (faster-whisper)
-      diarization.py     # Pause-based speaker separation
+      diarization.py     # Resemblyzer GE2E speaker diarization
       acoustic.py        # Pitch, energy, overlap, silence detection
       noise.py           # Background noise detection + classification
       quality.py         # Audio quality assessment
@@ -106,6 +109,8 @@ frontend/
       Login.tsx          # Authentication
       Upload.tsx         # File upload (ZIP or direct audio)
       Results.tsx        # Processing progress + results display
+      Validation.tsx     # Benchmark accuracy, ablation, diarization stats
+      Methodology.tsx    # Architecture, cost model, approach comparison
 docs/
   TECHNICAL_MEMO.md      # Approaches, validation, cost, latency analysis
 ```
