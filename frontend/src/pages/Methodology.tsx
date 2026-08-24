@@ -27,7 +27,7 @@ export default function Methodology() {
           <div className="mt-3 bg-[#0c111b] rounded-lg p-4 font-mono text-[11px] text-gray-400 leading-loose">
             Audio → Whisper (transcription) + Wav2Vec2 (4-class emotion + 5-class fine-tuned)<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ distilRoBERTa (text emotion) + librosa (acoustic features)<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Weighted Ensemble (0.55 audio, 0.25 text, 0.10 acoustic, 0.10 fine-tuned)<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Weighted Ensemble (0.50 audio, 0.25 text, 0.10 acoustic, 0.10 acoustic-clf)<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Keyword Boosting → 9-field output
           </div>
           <p className="mt-3">

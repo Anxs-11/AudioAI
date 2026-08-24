@@ -406,7 +406,7 @@ export default function Validation() {
                 confidence = (audio_weight × audio_conf + text_weight × text_conf<br />
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ acoustic_weight × acoustic_conf + ft_weight × ft_conf)<br />
                 <br />
-                weights: audio=0.55, text=0.25, acoustic=0.10, fine-tuned=0.10
+                weights: audio=0.50, text=0.25, acoustic=0.10, acoustic-clf=0.10
               </div>
               <p>
                 This means a confidence of <span className="text-emerald-300 font-medium">0.83</span> indicates strong agreement

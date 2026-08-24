@@ -123,7 +123,7 @@ export function downloadMemoPdf() {
   heading("1. Approach Selected & Rationale");
   subheading("Final System: Fine-Tuned 5-Class Wav2Vec2 Ensemble");
   para("An MLP classifier head trained on 3,646 samples (RAVDESS 1,440 + ESD 1,956 + MELD 250), dynamically blended with the original 4-class Wav2Vec2 audio model.");
-  para("Architecture: Audio → Whisper (transcription) + Wav2Vec2 (4-class + 5-class fine-tuned) + distilRoBERTa (text emotion) + librosa (acoustic features) → Weighted Ensemble (audio 0.45, text 0.25, acoustic 0.15, fine-tuned 0.10) → Keyword Boosting → 9-field output.");
+  para("Architecture: Audio → Whisper (transcription) + Wav2Vec2 (4-class + 5-class fine-tuned) + distilRoBERTa (text emotion) + librosa (acoustic features) → Weighted Ensemble (audio 0.50, text 0.25, acoustic 0.10, acoustic-clf 0.10) → Keyword Boosting → 9-field output.");
   subheading("Why This Approach");
   bullet("All models run locally on CPU — zero API cost, no data leaves the server");
   bullet("Dynamic blending preserves original model robustness while adding 5-class granularity");

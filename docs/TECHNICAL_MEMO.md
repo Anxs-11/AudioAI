@@ -47,7 +47,7 @@ Audio File
     └─► Quality Assessment ──► SNR + clipping ratio
             │
             ▼
-    Ensemble Voting (weighted: audio 0.45, text 0.25, acoustic 0.15, fine-tuned 0.10)
+    Ensemble Voting (weighted: audio 0.50, text 0.25, acoustic 0.10, acoustic-clf 0.10)
             │
             ▼
     Keyword Boosting (transcript-based emotion adjustment)

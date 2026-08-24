@@ -3,10 +3,11 @@ Ensemble module: combines predictions from all analysis pipelines into
 a single AnalysisResult matching the required output schema.
 
 Four independent signals are fused:
-  1. Audio emotion model  (wav2vec2 SER)         → weight 0.55
+  1. Audio emotion model  (wav2vec2 SER)         → weight 0.50
   2. Acoustic classifier  (MFCC/pitch/energy)    → weight 0.10
   3. Text emotion model   (distilRoBERTa)        → weight 0.25
   4. Acoustic features    (pitch/energy nudge)    → weight 0.10
+  (Dimensional model disabled; W_DIM = 0.00)
 
 The ensemble uses weighted voting for emotional_tone and derives
 emotional_intensity from model confidence + acoustic energy/pitch metrics.
