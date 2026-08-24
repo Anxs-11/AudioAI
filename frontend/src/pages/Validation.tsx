@@ -24,9 +24,9 @@ const APPROACH_COMPARISON = [
   },
   {
     name: "Approach B: Fine-Tuned 5-Class (Selected)",
-    pros: ["Full 5-class coverage", "Dynamic blending preserves robustness", "63% on synthetic calls, 100% on production calls"],
-    cons: ["46.9% overall (RAVDESS acted speech drags average)", "Distressed class underrepresented"],
-    accuracy: "63.3% (synthetic calls), 100% (production), 46.9% (all datasets)",
+    pros: ["Full 5-class coverage", "Dynamic blending preserves robustness", "60% on synthetic calls, 100% on production calls"],
+    cons: ["40% on RAVDESS acted speech (short clips, acted emotions)", "Distressed class underrepresented"],
+    accuracy: "60.0% (synthetic calls), 40.0% (RAVDESS), 49.5% (all datasets)",
   },
 ];
 
