@@ -241,6 +241,31 @@ export default function Validation() {
             </div>
             <p className="text-[11px] text-gray-500 mt-3">Overall: 372 field evaluations, 99% accuracy.</p>
           </SectionCard>
+
+          {/* Speaker diarization accuracy */}
+          <SectionCard title="Speaker Diarization Accuracy (Synthetic 2-Speaker Calls)">
+            <div className="grid grid-cols-3 gap-4 mb-3">
+              <div className="bg-[#0c111b] rounded-lg p-3 border border-white/[0.04] text-center">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Speaker Count Detection</p>
+                <p className="text-lg font-bold text-emerald-300">100%</p>
+                <p className="text-[10px] text-gray-500">5/5 calls correct</p>
+              </div>
+              <div className="bg-[#0c111b] rounded-lg p-3 border border-white/[0.04] text-center">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Word-Level Attribution</p>
+                <p className="text-lg font-bold text-amber-300">66.0%</p>
+                <p className="text-[10px] text-gray-500">5 synthetic calls</p>
+              </div>
+              <div className="bg-[#0c111b] rounded-lg p-3 border border-white/[0.04] text-center">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Method</p>
+                <p className="text-sm font-semibold text-gray-200">GE2E + Silhouette</p>
+                <p className="text-[10px] text-gray-500">resemblyzer embeddings</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500">
+              Tested on synthetic 2-speaker calls built from different RAVDESS actor recordings with 0.5s gaps.
+              Speaker count is detected via silhouette-based model selection over k∈&#123;2,3,4&#125;.
+            </p>
+          </SectionCard>
         </div>
       )}
 
