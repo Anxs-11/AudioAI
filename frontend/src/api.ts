@@ -75,6 +75,10 @@ export async function runBatch(batchId: number) {
   return api.post(`/batch/${batchId}/run`);
 }
 
+export async function cancelBatch(batchId: number) {
+  return api.post(`/batch/${batchId}/cancel`);
+}
+
 export interface BatchStatus {
   id: number;
   status: string;

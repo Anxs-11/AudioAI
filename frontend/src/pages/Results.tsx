@@ -4,6 +4,7 @@ import {
   getBatchStatus,
   getBatchResults,
   getBatchMetrics,
+  cancelBatch,
   BatchStatus,
   BatchMetrics,
   FileResult,
@@ -102,7 +103,10 @@ export default function Results() {
           </p>
 
           <button
-            onClick={() => navigate("/upload")}
+            onClick={async () => {
+              try { await cancelBatch(Number(batchId)); } catch {}
+              navigate("/history");
+            }}
             className="mt-6 px-5 py-2 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition"
           >
             Cancel &amp; go back

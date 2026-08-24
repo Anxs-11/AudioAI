@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/batch", tags=["batch"])
 
 
-# ── Upload ─────────────────────────────────────────────────────────────────────
+# Upload
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_batch(
@@ -163,7 +163,7 @@ async def upload_files(
     }
 
 
-# ── Single-file instant analysis (for live mic demo) ──────────────────────────
+# Single-file instant analysis (for live mic demo)
 
 @router.post("/analyze-now")
 async def analyze_now(
@@ -224,7 +224,7 @@ async def analyze_now(
     }
 
 
-# ── Run processing ─────────────────────────────────────────────────────────────
+# Run processing
 
 @router.post("/{batch_id}/run")
 async def run_batch(
@@ -247,7 +247,22 @@ async def run_batch(
     return {"message": "Processing started", "batch_id": batch_id}
 
 
-# ── Status & results ───────────────────────────────────────────────────────────
+@router.post("/{batch_id}/cancel")
+async def cancel_batch(
+    batch_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Cancel a running batch. Files already completed are kept."""
+    batch = await _get_user_batch(batch_id, user.id, db)
+    if batch.status != "processing":
+        raise HTTPException(status_code=409, detail="Batch is not processing")
+    batch.status = "cancelled"
+    await db.commit()
+    return {"message": "Batch cancelled", "batch_id": batch_id}
+
+
+# Status & results
 
 @router.get("/{batch_id}", response_model=BatchStatusResponse)
 async def get_batch_status(
@@ -290,7 +305,7 @@ async def get_batch_results(
     ]
 
 
-# ── Downloads ──────────────────────────────────────────────────────────────────
+# Downloads
 
 @router.get("/{batch_id}/download/json")
 async def download_json(
@@ -349,7 +364,7 @@ async def download_csv(
     )
 
 
-# ── List batches ───────────────────────────────────────────────────────────────
+# List batches
 
 @router.get("/{batch_id}/audio/{filename:path}")
 async def stream_audio(
@@ -541,7 +556,7 @@ async def list_batches(
     return out
 
 
-# ── Background processing ─────────────────────────────────────────────────────
+# Background processing
 
 async def _process_batch(batch_id: int):
     """
@@ -566,6 +581,15 @@ async def _process_batch(batch_id: int):
 
         async def _process_file(fr):
             await sem.acquire()
+            # Check if batch was cancelled before starting this file
+            await db.refresh(batch)
+            if batch.status == "cancelled":
+                if fr.status != "completed":
+                    fr.status = "cancelled"
+                    await db.commit()
+                sem.release()
+                return
+
             fr.status = "processing"
             await db.commit()
 
@@ -611,14 +635,15 @@ async def _process_batch(batch_id: int):
 
         await asyncio.gather(*[_process_file(fr) for fr in file_results])
 
-        # Mark batch as completed
-        batch.status = "completed"
+        await db.refresh(batch)
+        if batch.status != "cancelled":
+            batch.status = "completed"
         await db.commit()
-        logger.info("Batch %d completed: %d/%d succeeded",
-                     batch_id, batch.processed_files, batch.total_files)
+        logger.info("Batch %d %s: %d/%d succeeded",
+                     batch_id, batch.status, batch.processed_files, batch.total_files)
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# Helpers
 
 async def _get_user_batch(batch_id: int, user_id: int, db: AsyncSession) -> Batch:
     """Fetch a batch and verify it belongs to the requesting user."""

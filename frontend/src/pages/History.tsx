@@ -17,6 +17,7 @@ const statusColor: Record<string, string> = {
   processing: "bg-blue-900/30 text-blue-300",
   pending: "bg-white/[0.06] text-gray-400",
   failed: "bg-red-900/30 text-red-300",
+  cancelled: "bg-yellow-900/30 text-yellow-300",
 };
 
 function capitalize(s: string) {
