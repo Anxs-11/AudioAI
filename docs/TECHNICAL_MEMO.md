@@ -14,7 +14,7 @@
 - Trained on 3,646 samples: RAVDESS (1,440) + ESD (1,956) + MELD (250)
 - Maps to target 5 classes: neutral, satisfied, frustrated, upset, distressed
 - Dynamic blending: original model weighted higher when confident (robust on real calls), fine-tuned model contributes 5-class granularity
-- **Result**: 100% tone accuracy on production calls, 87.5% overall field accuracy
+- **Result**: 100% tone accuracy on production calls, 49.5% on 93-sample benchmark
 
 ### Why Approach B Was Selected
 - The original 4-class model cannot distinguish frustrated/distressed/satisfied
@@ -29,7 +29,7 @@ Audio File
     │
     ├─► Whisper (faster-whisper base) ──► Transcript + Word Timestamps
     │                                          │
-    │                                          ├─► Diarization (pause-based turn detection)
+    │                                          ├─► Diarization (resemblyzer GE2E + silhouette clustering)
     │                                          │       └─► Customer text extraction
     │                                          │
     │                                          └─► Text Emotion (distilRoBERTa)
@@ -65,14 +65,23 @@ Audio File
 
 ## 3. Validation Results
 
-### Emotion Tone Accuracy (Production Calls)
-| Call | Predicted | Ground Truth | Match |
-|------|-----------|-------------|-------|
-| call_001.ogg | upset | upset | ✓ |
-| call_002.ogg | neutral | neutral | ✓ |
-| call_003.ogg | satisfied | satisfied | ✓ |
+### Emotion Tone Accuracy
 
-**Tone accuracy: 3/3 (100%)**
+| Dataset | Accuracy | Samples |
+|---------|----------|--------|
+| Production calls | 100% | 3 |
+| Synthetic calls | 60.0% | 30 |
+| RAVDESS | 41.7% | 60 |
+| **Combined** | **49.5%** | **93** |
+
+Tuned on 70% split; held-out numbers reported. Weights grid-searched via `scripts/tune_weights.py`.
+
+### Speaker Diarization Accuracy (Synthetic 2-Speaker Calls)
+| Metric | Value |
+|--------|-------|
+| Speaker count detection | 100% (5/5) |
+| Word-level attribution | 66.0% |
+| Method | Resemblyzer GE2E + agglomerative clustering + silhouette-based k selection |
 
 ### Overall Field Accuracy (Production Calls)
 | Call | Fields Correct | Total |
@@ -158,4 +167,4 @@ Pipeline optimization via parallel execution and INT8 quantization reduced proce
 2. **Larger Whisper model**: Switch to whisper-medium for better transcription on accented speech
 3. **GPU inference**: 5-10x speedup with CUDA; enables real-time processing
 4. **Active learning**: Flag low-confidence predictions for human review and retraining
-5. **Pyannote speaker diarization**: Replace pause-based heuristic with neural overlap detection
+5. **ECAPA-TDNN speaker embeddings**: Drop-in upgrade from resemblyzer for ~2-3% better speaker separation
