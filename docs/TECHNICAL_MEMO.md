@@ -148,6 +148,17 @@ Pipeline optimization via parallel execution and INT8 quantization reduced proce
 - Model loading: ~15 seconds (one-time, at startup)
 - Subsequent requests: no additional loading overhead
 
+### Deployment Performance Note
+All 5 ML models run on CPU with zero external API calls. Processing speed scales directly with available compute:
+
+| Environment | Per-File Speed | Notes |
+|-------------|---------------|-------|
+| Local (modern CPU, e.g. i7/Ryzen) | 10–15 sec | Recommended for evaluation |
+| Railway (shared 8 vCPU, 8 GB RAM) | 1–2 min | Deployed demo, CPU-only |
+| GPU instance (T4/A10G) | 3–5 sec | Architecture is GPU-ready |
+
+The deployed version at https://audio-ai-wine.vercel.app works correctly but is slower due to shared cloud CPU resources. For full-speed evaluation, run locally with `docker-compose up`.
+
 ## 6. Failure Modes & Limitations
 
 ### Known Limitations

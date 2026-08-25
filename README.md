@@ -85,6 +85,8 @@ Each audio file produces:
 | Processing speed | ~0.5× realtime (optimized) |
 | Inference cost | $0.000/min (all local) |
 
+> **Performance Note:** All inference runs on CPU with no external API calls. The deployed demo (Railway, shared 8 vCPU / 8 GB RAM, no GPU) processes each file in ~1–2 minutes. On a local machine with a modern CPU, processing drops to **10–15 seconds per file**. With GPU acceleration, per-file processing would be **3–5 seconds**. For the fastest experience, run locally with `docker-compose up`.
+
 ## Project Structure
 
 ```
