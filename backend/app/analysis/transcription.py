@@ -35,13 +35,14 @@ def _get_model():
     global _whisper_model
     if _whisper_model is None:
         from faster_whisper import WhisperModel
-        from app.config import WHISPER_MODEL_SIZE
+        from app.config import WHISPER_MODEL_SIZE, DEVICE
 
-        logger.info("Loading Whisper model '%s' ...", WHISPER_MODEL_SIZE)
+        compute = "float16" if DEVICE == "cuda" else "int8"
+        logger.info("Loading Whisper model '%s' on %s ...", WHISPER_MODEL_SIZE, DEVICE)
         _whisper_model = WhisperModel(
             WHISPER_MODEL_SIZE,
-            device="cpu",
-            compute_type="int8",
+            device=DEVICE,
+            compute_type=compute,
         )
         logger.info("Whisper model loaded.")
     return _whisper_model

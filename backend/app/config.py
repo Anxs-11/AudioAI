@@ -33,6 +33,7 @@ DEFAULT_PASSWORD = os.getenv("ADMIN_PASSWORD", "autoace2024")
 # Audio & model settings
 WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "base")
 SAMPLE_RATE = 16_000  # all audio is resampled to 16 kHz mono
+DEVICE = os.getenv("DEVICE", "cpu")  # set to "cuda" for GPU acceleration
 
 # Model identifiers (HuggingFace)
 AUDIO_EMOTION_MODEL = "superb/wav2vec2-base-superb-er"

@@ -84,15 +84,17 @@ def _get_original_pipe():
     if _original_pipe is None:
         import torch
         from transformers import pipeline
-        from app.config import AUDIO_EMOTION_MODEL
-        logger.info("Loading original audio emotion model: %s", AUDIO_EMOTION_MODEL)
-        _original_pipe = pipeline("audio-classification", model=AUDIO_EMOTION_MODEL, device=-1)
-        _original_pipe.model = torch.quantization.quantize_dynamic(
-            _original_pipe.model,
-            {torch.nn.Linear},
-            dtype=torch.qint8,
-        )
-        logger.info("Wav2Vec2 model quantized to INT8.")
+        from app.config import AUDIO_EMOTION_MODEL, DEVICE
+        hf_device = 0 if DEVICE == "cuda" else -1
+        logger.info("Loading original audio emotion model: %s on %s", AUDIO_EMOTION_MODEL, DEVICE)
+        _original_pipe = pipeline("audio-classification", model=AUDIO_EMOTION_MODEL, device=hf_device)
+        if DEVICE == "cpu":
+            _original_pipe.model = torch.quantization.quantize_dynamic(
+                _original_pipe.model,
+                {torch.nn.Linear},
+                dtype=torch.qint8,
+            )
+            logger.info("Wav2Vec2 model quantized to INT8.")
     return _original_pipe
 
 
@@ -163,14 +165,15 @@ def _get_text_pipe():
     global _text_emotion_pipe
     if _text_emotion_pipe is None:
         from transformers import pipeline
-        from app.config import TEXT_EMOTION_MODEL
+        from app.config import TEXT_EMOTION_MODEL, DEVICE
 
-        logger.info("Loading text emotion model: %s", TEXT_EMOTION_MODEL)
+        hf_device = 0 if DEVICE == "cuda" else -1
+        logger.info("Loading text emotion model: %s on %s", TEXT_EMOTION_MODEL, DEVICE)
         _text_emotion_pipe = pipeline(
             "text-classification",
             model=TEXT_EMOTION_MODEL,
             top_k=None,  # return all class scores
-            device=-1,
+            device=hf_device,
         )
         logger.info("Text emotion model loaded.")
     return _text_emotion_pipe

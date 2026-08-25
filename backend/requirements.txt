@@ -20,7 +20,6 @@ pydub>=0.25.1
 # ML models
 faster-whisper>=0.10.0
 transformers>=4.36.0
---extra-index-url https://download.pytorch.org/whl/cpu
 torch>=2.1.0
 resemblyzer>=0.1.3
 
