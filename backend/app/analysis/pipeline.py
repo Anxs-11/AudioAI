@@ -7,7 +7,6 @@ All models are loaded lazily as singletons on first use.
 
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import librosa
@@ -60,20 +59,14 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
     if len(audio) < sr * 0.5:
         raise ValueError("Audio too short (< 0.5 seconds)")
 
-    # Parallel — Whisper, acoustic features, Wav2Vec2
-    logger.info("  Running transcription, acoustic extraction, and audio emotion in parallel...")
+    # Sequential — avoids CPU contention on resource-limited deployments
+    logger.info("  Running transcription, acoustic extraction, and audio emotion...")
     t_step = time.time()
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        future_transcript = executor.submit(transcribe, audio, sr)
-        future_acoustic = executor.submit(extract_features, audio, sr)
-        future_audio_emotion = executor.submit(classify_audio_emotion, audio, sr)
-        future_dim_emotion = executor.submit(classify_dimensional_emotion, audio, sr)
-
-        transcript = future_transcript.result()
-        acoustic_feat = future_acoustic.result()
-        audio_emotion = future_audio_emotion.result()
-        dim_emotion = future_dim_emotion.result()
-    parallel_sec = round(time.time() - t_step, 2)
+    transcript = transcribe(audio, sr)
+    acoustic_feat = extract_features(audio, sr)
+    audio_emotion = classify_audio_emotion(audio, sr)
+    dim_emotion = classify_dimensional_emotion(audio, sr)
+    pipeline_sec = round(time.time() - t_step, 2)
 
     logger.info("  Language: %s (%.0f%%), Transcript: %s",
                 transcript.language, transcript.language_probability * 100,
@@ -149,7 +142,7 @@ def analyze_audio_file(file_path: str | Path) -> tuple[AnalysisResult, dict]:
         "duration_sec": round(len(audio) / sr, 1),
         "processing_time_sec": round(time.time() - t0, 1),
         "stage_timings": {
-            "parallel_sec": parallel_sec,
+            "pipeline_sec": pipeline_sec,
             "diarization_sec": diarization_sec,
             "classifiers_sec": classifiers_sec,
         },
