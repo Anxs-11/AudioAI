@@ -8,6 +8,10 @@ Automated analysis of emotional tone, background noise, and audio quality in pro
 - **Login**: `autoace` / `autoace2024`
 - **Backend API**: https://audioai-production.up.railway.app
 
+## Demo
+
+[Watch the demo](https://drive.google.com/file/d/1NY5X7qRq11KHx2aCg0ciW23grrp1vjab/view?usp=drive_link)
+
 ## Quick Start (Local)
 
 ### Prerequisites

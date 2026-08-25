@@ -1,5 +1,9 @@
 # AutoAce Voice Tone & Background Noise — Technical Memo
 
+## Demo
+
+[Watch the demo](https://drive.google.com/file/d/1NY5X7qRq11KHx2aCg0ciW23grrp1vjab/view?usp=drive_link)
+
 ## 1. Approaches Tested
 
 ### Approach A: Audio Foundation Model (Wav2Vec2 Ensemble)
